@@ -1,0 +1,613 @@
+"use client";
+
+import AppShell from "@/components/app-shell";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Download, Plus, Users, TrendingUp, DollarSign, Target, Clock, BarChart3, Activity } from "lucide-react";
+import { CommentDialog } from "@/components/comment-dialog";
+import { EditLeadModal } from "@/components/edit-lead-modal";
+
+type Lead = {
+  id: string;
+  projectName?: string | null;
+  projectValue?: number | null;
+  projectType?: string | null;
+  currency?: string | null;
+  name: string; 
+  email?: string | null; 
+  phone?: string | null; 
+  designation?: string | null;
+  company?: string | null; 
+  website?: string | null;
+  status: string; 
+  source: string; 
+  createdAt: string;
+  industry?: string | null;
+};
+
+interface PipelineMetrics {
+  totalPipelineValue: number;
+  expectedRevenue: number;
+  dealsInPipeline: number;
+  wonDeals: number;
+  lostDeals: number;
+  conversionRate: number;
+  avgDealSize: number;
+  avgSalesCycle: number;
+  forecastVsTarget: number;
+  target: number;
+}
+
+// Helper function to format currency with INR
+const formatCurrency = (value: number) => {
+  if (isNaN(value) || !isFinite(value)) return '₹0';
+  const rounded = Math.round(value);
+  const formatted = rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return `₹${formatted}`;
+};
+
+// KPI Card Component
+function KPICard({ title, value, subtitle, icon: Icon, color }: {
+  title: string;
+  value: string;
+  subtitle?: string;
+  icon: any;
+  color: string;
+}) {
+  return (
+    <div className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl p-4 border border-slate-600/50 hover:border-slate-500/50 transition-all duration-200">
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <p className="text-slate-400 text-xs font-medium">{title}</p>
+          <p className="text-xl font-bold text-white mt-1">{value}</p>
+          {subtitle && <p className="text-slate-500 text-xs mt-1">{subtitle}</p>}
+        </div>
+        <div className={`w-12 h-12 ${color} rounded-lg flex items-center justify-center`}>
+          <Icon className="w-6 h-6 text-white" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function PipelinePage() {
+  const [allLeads, setAllLeads] = useState<Lead[]>([]);
+  const [pipelineMetrics, setPipelineMetrics] = useState<PipelineMetrics>({
+    totalPipelineValue: 0,
+    expectedRevenue: 0,
+    dealsInPipeline: 0,
+    wonDeals: 0,
+    lostDeals: 0,
+    conversionRate: 0,
+    avgDealSize: 0,
+    avgSalesCycle: 0,
+    forecastVsTarget: 0,
+    target: 0 // Will be loaded from API
+  });
+  const [timeRange, setTimeRange] = useState<'month' | 'quarter' | 'year'>('month');
+  const [isLoading, setIsLoading] = useState(true);
+  const [commentDialogOpen, setCommentDialogOpen] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingLeadId, setEditingLeadId] = useState<string>("");
+
+  // Load leads data
+  async function loadLeads() {
+    try {
+      setIsLoading(true);
+      
+      // Load leads
+      const res = await fetch("/api/leads", { cache: "no-store" });
+      const data = await res.json();
+      setAllLeads(data);
+      
+      // Load target based on selected time range
+      const currentYear = new Date().getFullYear();
+      const currentMonth = new Date().getMonth() + 1;
+      const currentQuarter = Math.ceil(currentMonth / 3);
+      
+      let targetAmount = 0;
+      try {
+        let targetParams = new URLSearchParams();
+        
+        if (timeRange === 'month') {
+          targetParams.set('period', 'MONTHLY');
+          targetParams.set('year', currentYear.toString());
+          targetParams.set('month', currentMonth.toString());
+        } else if (timeRange === 'quarter') {
+          targetParams.set('period', 'QUARTERLY');
+          targetParams.set('year', currentYear.toString());
+          targetParams.set('quarter', currentQuarter.toString());
+        } else {
+          targetParams.set('period', 'YEARLY');
+          targetParams.set('year', currentYear.toString());
+        }
+        
+        const targetRes = await fetch(`/api/targets/progress?${targetParams.toString()}`);
+        if (targetRes.ok) {
+          const targetData = await targetRes.json();
+          // Sum all target amounts (company + user targets)
+          targetAmount = targetData.summary?.totalTargetAmount || 0;
+        }
+      } catch (targetError) {
+        console.warn("Could not load target data:", targetError);
+      }
+      
+      calculatePipelineMetrics(data, targetAmount);
+    } catch (error) {
+      console.error("Error loading pipeline data:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  // Calculate pipeline metrics
+  const calculatePipelineMetrics = (leads: Lead[], targetAmount: number = 0) => {
+    const USD_TO_INR_RATE = 83;
+    
+    // Filter active pipeline leads (excluding WON and LOST)
+    const activeLeads = leads.filter(lead => !['WON', 'LOST'].includes(lead.status));
+    const wonLeads = leads.filter(lead => lead.status === 'WON');
+    const lostLeads = leads.filter(lead => lead.status === 'LOST');
+    
+    // Calculate total pipeline value with USD to INR conversion
+    const totalPipelineValue = activeLeads.reduce((sum, lead) => {
+      const value = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue || '0');
+      if (isNaN(value) || value === 0) return sum;
+      
+      const convertedValue = lead.currency === "USD" ? value * USD_TO_INR_RATE : value;
+      return sum + convertedValue;
+    }, 0);
+
+    // Calculate expected revenue (simplified)
+    const expectedRevenue = totalPipelineValue * 0.3; // 30% probability
+    
+    // Calculate average deal size
+    const avgDealSize = activeLeads.length > 0 ? totalPipelineValue / activeLeads.length : 0;
+    
+    // Calculate conversion rate
+    const totalDeals = wonLeads.length + lostLeads.length;
+    const conversionRate = totalDeals > 0 ? (wonLeads.length / totalDeals) * 100 : 0;
+    
+    setPipelineMetrics({
+      totalPipelineValue,
+      expectedRevenue,
+      dealsInPipeline: activeLeads.length,
+      wonDeals: wonLeads.length,
+      lostDeals: lostLeads.length,
+      conversionRate,
+      avgDealSize,
+      avgSalesCycle: 30, // Default
+      forecastVsTarget: expectedRevenue,
+      target: targetAmount
+    });
+  };
+
+  useEffect(() => {
+    loadLeads();
+  }, [timeRange]); // Reload when time range changes
+
+  // Handle edit lead
+  const handleEditLead = (leadId: string) => {
+    setEditingLeadId(leadId);
+    setIsEditModalOpen(true);
+  };
+
+  // Handle lead updated
+  const handleLeadUpdated = () => {
+    loadLeads();
+  };
+
+  // Handle comment
+  const handleComment = (lead: Lead) => {
+    setSelectedLead(lead);
+    setCommentDialogOpen(true);
+  };
+
+  if (isLoading) {
+    return (
+      <AppShell>
+        <div className="space-y-6">
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
+              <p className="text-slate-400">Loading pipeline data...</p>
+            </div>
+          </div>
+        </div>
+      </AppShell>
+    );
+  }
+
+  return (
+    <AppShell>
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-2xl font-bold text-white mb-1">Pipeline Management</h1>
+            <p className="text-slate-400 text-sm">Strategic pipeline analysis and forecasting</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 bg-slate-800 rounded-lg p-1">
+              {(['month', 'quarter', 'year'] as const).map((range) => (
+                <Button
+                  key={range}
+                  variant={timeRange === range ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => setTimeRange(range)}
+                  className={timeRange === range ? "bg-purple-600 text-white" : "text-slate-400 hover:text-white"}
+                >
+                  {range.charAt(0).toUpperCase() + range.slice(1)}
+                </Button>
+              ))}
+            </div>
+            <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white">
+              <Download className="w-4 h-4 mr-2" />
+              Export Report
+            </Button>
+            <Link href="/leads/new">
+              <Button className="bg-purple-600 hover:bg-purple-700 rounded-lg">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Lead
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Target Overview */}
+        <div className="bg-gradient-to-r from-purple-900/50 to-blue-900/50 rounded-xl p-6 mb-6 border border-purple-500/20">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-white mb-1">Target Performance</h2>
+              <p className="text-purple-200 text-sm">
+                {timeRange.charAt(0).toUpperCase() + timeRange.slice(1)}ly target vs expected revenue
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold text-white">
+                {Math.round((pipelineMetrics.expectedRevenue / pipelineMetrics.target) * 100)}%
+              </p>
+              <p className="text-purple-200 text-sm">of target</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-slate-800/50 rounded-lg p-4">
+              <p className="text-slate-400 text-xs font-medium">TARGET AMOUNT</p>
+              <p className="text-xl font-bold text-white">{formatCurrency(pipelineMetrics.target)}</p>
+            </div>
+            <div className="bg-slate-800/50 rounded-lg p-4">
+              <p className="text-slate-400 text-xs font-medium">EXPECTED REVENUE</p>
+              <p className="text-xl font-bold text-white">{formatCurrency(pipelineMetrics.expectedRevenue)}</p>
+            </div>
+            <div className="bg-slate-800/50 rounded-lg p-4">
+              <p className="text-slate-400 text-xs font-medium">GAP TO TARGET</p>
+              <p className={`text-xl font-bold ${
+                pipelineMetrics.expectedRevenue >= pipelineMetrics.target ? 'text-green-400' : 'text-red-400'
+              }`}>
+                {pipelineMetrics.expectedRevenue >= pipelineMetrics.target ? '+' : ''}
+                {formatCurrency(pipelineMetrics.expectedRevenue - pipelineMetrics.target)}
+              </p>
+            </div>
+          </div>
+          
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-sm mb-2">
+              <span className="text-slate-400">Progress to Target</span>
+              <span className="text-white font-medium">
+                {Math.round((pipelineMetrics.expectedRevenue / pipelineMetrics.target) * 100)}%
+              </span>
+            </div>
+            <div className="w-full bg-slate-700 rounded-full h-3">
+              <div 
+                className={`h-3 rounded-full transition-all duration-500 ${
+                  pipelineMetrics.expectedRevenue >= pipelineMetrics.target 
+                    ? 'bg-gradient-to-r from-green-500 to-green-400' 
+                    : pipelineMetrics.expectedRevenue >= pipelineMetrics.target * 0.8
+                    ? 'bg-gradient-to-r from-yellow-500 to-yellow-400'
+                    : 'bg-gradient-to-r from-red-500 to-red-400'
+                }`}
+                style={{ 
+                  width: `${Math.min((pipelineMetrics.expectedRevenue / pipelineMetrics.target) * 100, 100)}%` 
+                }}
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        {/* KPI Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <KPICard
+            title="Total Pipeline Value"
+            value={formatCurrency(pipelineMetrics.totalPipelineValue)}
+            subtitle={`${timeRange} view`}
+            icon={DollarSign}
+            color="bg-blue-500/20"
+          />
+          <KPICard
+            title="Expected Revenue"
+            value={formatCurrency(pipelineMetrics.expectedRevenue)}
+            subtitle="Probability-weighted"
+            icon={Target}
+            color="bg-green-500/20"
+          />
+          <KPICard
+            title="Deals in Pipeline"
+            value={pipelineMetrics.dealsInPipeline.toString()}
+            subtitle="Active opportunities"
+            icon={Users}
+            color="bg-purple-500/20"
+          />
+          <KPICard
+            title="Conversion Rate"
+            value={`${pipelineMetrics.conversionRate.toFixed(1)}%`}
+            subtitle={`${pipelineMetrics.wonDeals} won / ${pipelineMetrics.lostDeals} lost`}
+            icon={TrendingUp}
+            color="bg-orange-500/20"
+          />
+        </div>
+
+        {/* Additional KPIs */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <KPICard
+            title="Average Deal Size"
+            value={formatCurrency(pipelineMetrics.avgDealSize)}
+            subtitle="Per opportunity"
+            icon={BarChart3}
+            color="bg-cyan-500/20"
+          />
+          <KPICard
+            title="Sales Cycle Length"
+            value={`${Math.round(pipelineMetrics.avgSalesCycle)} days`}
+            subtitle="Average time to close"
+            icon={Clock}
+            color="bg-yellow-500/20"
+          />
+          <KPICard
+            title="Target Achievement"
+            value={`${Math.round((pipelineMetrics.expectedRevenue / pipelineMetrics.target) * 100)}%`}
+            subtitle="Forecast vs Target"
+            icon={Activity}
+            color="bg-red-500/20"
+          />
+        </div>
+      </div>
+
+      {/* Main Analysis Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Pipeline Funnel */}
+        <div className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600/50">
+          <h3 className="text-lg font-semibold text-white mb-4">Pipeline Funnel</h3>
+          <div className="space-y-4">
+            {['New Leads', 'Contacted', 'Qualified', 'Proposal', 'Won', 'Lost'].map((stage, index) => {
+              const stageLeads = allLeads.filter(lead => lead.status === stage.toUpperCase());
+              const stageValue = stageLeads.reduce((sum, lead) => {
+                const value = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue || '0');
+                if (isNaN(value) || value === 0) return sum;
+                const convertedValue = lead.currency === "USD" ? value * 83 : value;
+                return sum + convertedValue;
+              }, 0);
+              
+              return (
+                <div key={stage} className="relative">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-slate-300">{stage}</span>
+                    <div className="text-right">
+                      <div className="text-sm font-semibold text-white">{stageLeads.length} deals</div>
+                      <div className="text-xs text-slate-400">{formatCurrency(stageValue)}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="w-full bg-slate-700 rounded-full h-3">
+                    <div 
+                      className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-500"
+                      style={{ width: `${(stageLeads.length / Math.max(...['New Leads', 'Contacted', 'Qualified', 'Proposal', 'Won', 'Lost'].map(s => allLeads.filter(l => l.status === s.toUpperCase()).length))) * 100}%` }}
+                    />
+                  </div>
+                  
+                  {index < 5 && (
+                    <div className="text-xs text-red-400 mt-1">
+                      ↓ {stageLeads.length > 0 ? Math.round((stageLeads.length / allLeads.filter(l => l.status === ['New Leads', 'Contacted', 'Qualified', 'Proposal', 'Won', 'Lost'][index].toUpperCase()).length) * 100) : 0}% drop-off
+                    </div>
+                  )}
+                  
+                  <div className="text-xs text-slate-500 mt-1">
+                    {stageLeads.length > 0 ? Math.round((stageLeads.length / allLeads.filter(l => l.status === ['New Leads', 'Contacted', 'Qualified', 'Proposal', 'Won', 'Lost'][index].toUpperCase()).length) * 100) : 0}% conversion rate
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        
+        {/* Forecast vs Target */}
+        <div className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600/50">
+          <h3 className="text-lg font-semibold text-white mb-4">Forecast vs Target</h3>
+          
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-slate-400">Target</span>
+              <span className="text-lg font-bold text-white">{formatCurrency(pipelineMetrics.target)}</span>
+            </div>
+            
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-slate-400">Expected Revenue</span>
+              <span className="text-lg font-bold text-green-400">{formatCurrency(pipelineMetrics.expectedRevenue)}</span>
+            </div>
+            
+            <div className="border-t border-slate-600 pt-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-slate-400">Gap</span>
+                <span className={`text-lg font-bold ${pipelineMetrics.expectedRevenue >= pipelineMetrics.target ? 'text-red-400' : 'text-green-400'}`}>
+                  {pipelineMetrics.expectedRevenue >= pipelineMetrics.target ? '+' : ''}
+                  {formatCurrency(pipelineMetrics.expectedRevenue - pipelineMetrics.target)}
+                </span>
+              </div>
+              
+              <div className="mt-2">
+                <div className="flex justify-between text-xs text-slate-500 mb-1">
+                  <span>Progress</span>
+                  <span>{Math.round((pipelineMetrics.expectedRevenue / pipelineMetrics.target) * 100)}%</span>
+                </div>
+                <div className="w-full bg-slate-700 rounded-full h-2">
+                  <div 
+                    className={`h-2 rounded-full transition-all duration-500 ${
+                      pipelineMetrics.expectedRevenue >= pipelineMetrics.target * 0.9 ? 'bg-green-500' : 'bg-red-500'
+                    }`}
+                    style={{ width: `${Math.min((pipelineMetrics.expectedRevenue / pipelineMetrics.target) * 100, 100)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className={`text-center p-3 rounded-lg ${
+              pipelineMetrics.expectedRevenue >= pipelineMetrics.target * 0.9 
+                ? 'bg-green-500/20 border border-green-500/30' 
+                : 'bg-red-500/20 border border-red-500/30'
+            }`}>
+              <span className={`text-sm font-medium ${pipelineMetrics.expectedRevenue >= pipelineMetrics.target * 0.9 ? 'text-green-400' : 'text-red-400'}`}>
+                {pipelineMetrics.expectedRevenue >= pipelineMetrics.target * 0.9 ? '🎯 On Track' : '⚠️ Behind Target'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Secondary Analysis Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Pipeline Aging */}
+        <div className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600/50">
+          <h3 className="text-lg font-semibold text-white mb-4">Pipeline Aging</h3>
+          <div className="space-y-4">
+            {[
+              { name: '0-30', color: 'bg-green-500' },
+              { name: '31-60', color: 'bg-yellow-500' },
+              { name: '61-90', color: 'bg-orange-500' },
+              { name: '90+', color: 'bg-red-500' }
+            ].map((bucket) => {
+              const bucketLeads = allLeads.filter(lead => !['WON', 'LOST'].includes(lead.status));
+              const bucketValue = bucketLeads.reduce((sum, lead) => {
+                const value = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue || '0');
+                if (isNaN(value) || value === 0) return sum;
+                const convertedValue = lead.currency === "USD" ? value * 83 : value;
+                return sum + convertedValue;
+              }, 0);
+              
+              return (
+                <div key={bucket.name} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${bucket.color}`} />
+                    <span className="text-sm text-slate-300">{bucket.name} days</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-semibold text-white">{bucketLeads.length} deals</div>
+                    <div className="text-xs text-slate-400">{formatCurrency(bucketValue)}</div>
+                  </div>
+                  <div className="text-xs text-slate-500 w-12 text-right">
+                    {bucketLeads.length > 0 ? Math.round((bucketLeads.length / allLeads.filter(l => !['WON', 'LOST'].includes(l.status)).length) * 100) : 0}%
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        
+        {/* Deal Size Distribution */}
+        <div className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600/50">
+          <h3 className="text-lg font-semibold text-white mb-4">Deal Size Distribution</h3>
+          <div className="space-y-4">
+            {[
+              { name: 'Small', color: 'bg-blue-500', maxValue: 100000 },
+              { name: 'Medium', color: 'bg-purple-500', maxValue: 500000 },
+              { name: 'Large', color: 'bg-green-500', maxValue: Infinity }
+            ].map((size) => {
+              const sizeLeads = allLeads.filter(lead => {
+                if (!['WON', 'LOST'].includes(lead.status)) return false;
+                const value = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue || '0');
+                if (isNaN(value) || value === 0) return false;
+                const convertedValue = lead.currency === "USD" ? value * 83 : value;
+                return size.name === 'Small' ? convertedValue <= 100000 :
+                       size.name === 'Medium' ? convertedValue > 100000 && convertedValue <= 500000 :
+                       convertedValue > 500000;
+              });
+              
+              const sizeValue = sizeLeads.reduce((sum, lead) => {
+                const value = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue || '0');
+                if (isNaN(value) || value === 0) return sum;
+                const convertedValue = lead.currency === "USD" ? value * 83 : value;
+                return sum + convertedValue;
+              }, 0);
+              
+              return (
+                <div key={size.name} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${size.color}`} />
+                    <span className="text-sm text-slate-300">{size.name}</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-semibold text-white">{sizeLeads.length} deals</div>
+                    <div className="text-xs text-slate-400">Avg: {formatCurrency(sizeLeads.length > 0 ? sizeValue / sizeLeads.length : 0)}</div>
+                  </div>
+                  <div className="text-xs text-slate-500 w-16 text-right">
+                    {formatCurrency(sizeValue)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        
+        {/* Lost Deals Analysis */}
+        <div className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600/50">
+          <h3 className="text-lg font-semibold text-white mb-4">Lost Deals Analysis</h3>
+          <div className="space-y-4">
+            {allLeads.filter(lead => lead.status === 'LOST').length === 0 ? (
+              <p className="text-slate-400 text-sm text-center py-8">No lost deals to analyze</p>
+            ) : (
+              allLeads.filter(lead => lead.status === 'LOST').map((lead) => {
+                const value = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue || '0');
+                const convertedValue = lead.currency === "USD" ? value * 83 : value;
+                
+                return (
+                  <div key={lead.id} className="flex items-center justify-between">
+                    <span className="text-sm text-slate-300 truncate flex-1">{lead.source || 'Unknown'}</span>
+                    <div className="text-right ml-4">
+                      <div className="text-sm font-semibold text-white">1 deal</div>
+                      <div className="text-xs text-slate-400">{formatCurrency(convertedValue)}</div>
+                    </div>
+                    <div className="text-xs text-slate-500 w-12 text-right">
+                      100%
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Comment Dialog */}
+      {selectedLead && (
+        <CommentDialog
+          isOpen={commentDialogOpen}
+          onClose={() => {
+            setCommentDialogOpen(false);
+            setSelectedLead(null);
+          }}
+          leadId={selectedLead.id}
+          leadName={selectedLead.name}
+        />
+      )}
+
+      {/* Edit Lead Modal */}
+      <EditLeadModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        leadId={editingLeadId}
+        onLeadUpdated={handleLeadUpdated}
+      />
+    </AppShell>
+  );
+}

@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+model User {
+  id          String   @id @default(cuid())
+  
+  // Authentication
+  email       String   @unique
+  username    String   @unique
+  password    String   // Hashed with bcrypt
+  
+  // Profile
+  firstName   String
+  lastName    String
+  role        Role     @default(USER)
+  isActive    Boolean  @default(true)
+  
+  // Relationships
+  leads       Lead[]   // User owns multiple leads
+  comments    Comment[] // User can make comments
+  targets     Target[] // User can have assigned targets
+  createdTargets Target[] @relation("AdminCreatedTargets") // Targets created by admin
+  createdBy   String?  // Admin who created this user
+  admin       User?    @relation("AdminCreatedUsers", fields: [createdBy], references: [id])
+  createdUsers User[]  @relation("AdminCreatedUsers")
+  
+  // Metadata
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Lead {
+  id        String   @id @default(cuid())
+
+  // Personal Information
+  name        String                 // First name
+  middleName  String?                // Middle name
+  lastName    String?                // Last name
+  email       String?  @unique
+  phone       String?  @db.VarChar(32)
+  designation String?
+  department  String?
+  industry    String?
+  country     String?                // Country for currency determination
+  photo       String?                // Photo URL or data
+
+  // Company Information
+  company             String?
+  website             String?
+  companyDescription  String? @db.Text
+
+  // Project Information
+  projectName        String?
+  projectDescription String? @db.Text
+  projectType        String?
+  budget             String?                // Budget range (existing)
+  projectValue       Decimal? @db.Decimal(10,2)  // Actual project value
+  currency           String?                // INR or USD
+  timeline           String?
+
+  // Lead Management
+  status    String   @default("NEW")
+  source    String   @default("OTHER")
+  tags      String[] @db.Text
+  notes     String?
+  isActive  Boolean  @default(true)  // Active/Deactivated status
+
+  // User ownership
+  ownerId   String    // Foreign key to User
+  owner     User      @relation(fields: [ownerId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Comments relationship
+  comments Comment[]
+  
+  // Performance indexes
+  @@index([status])
+  @@index([source])
+  @@index([ownerId])
+  @@index([createdAt])
+  @@index([isActive])
+  @@index([status, createdAt])
+  @@index([ownerId, status])
+  @@index([projectValue])
+  @@index([ownerId, isActive])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  
+  // Comment content
+  content   String   @db.Text
+  
+  // File attachments
+  attachments CommentAttachment[]
+  
+  // Relationships
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  authorId  String?   // User who created the comment (optional for migration)
+  author    User?     @relation(fields: [authorId], references: [id])
+  
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Performance indexes
+  @@index([leadId])
+  @@index([authorId])
+  @@index([createdAt])
+  @@index([leadId, createdAt])
+}
+
+model CommentAttachment {
+  id        String   @id @default(cuid())
+  
+  // File information
+  fileName  String
+  fileType  String
+  fileSize  Int
+  fileUrl   String
+  
+  // Relationships
+  commentId String
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  
+  // Metadata
+  createdAt DateTime @default(now())
+}
+
+model Target {
+  id        String   @id @default(cuid())
+  
+  // Target details
+  amount    Decimal  @db.Decimal(15,2)
+  currency  String   @default("INR")
+  
+  // Target assignment
+  targetType String  @default("COMPANY") // "COMPANY" or "USER"
+  userId     String? // null for company targets, user ID for user targets
+  user       User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Time period
+  period    String   // "MONTHLY", "QUARTERLY", "YEARLY"
+  year      Int
+  month     Int?     // 1-12 for monthly targets, null for yearly
+  quarter   Int?     // 1-4 for quarterly targets, null for yearly/monthly
+  
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String?  // Admin who created this target
+  admin     User?    @relation("AdminCreatedTargets", fields: [createdBy], references: [id])
+  
+  // Unique constraint to prevent duplicate targets for same period and user/company
+  @@unique([targetType, userId, period, year, month, quarter], name: "unique_target_assignment")
+  
+  // Performance indexes
+  @@index([targetType])
+  @@index([userId])
+  @@index([period, year])
+  @@index([year, month])
+  @@index([year, quarter])
+  @@index([targetType, period, year])
+}
+
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  category  String   // "company", "crm", "targets", "system"
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

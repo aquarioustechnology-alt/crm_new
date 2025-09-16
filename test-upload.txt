@@ -1,0 +1,12 @@
+This is a test file for upload functionality in the CRM comment system.
+
+File details:
+- Created for testing end-to-end file upload
+- Should be attached to a comment
+- Tests the complete flow from frontend to database
+
+Test scenarios:
+1. File selection and upload
+2. Comment creation with attachment
+3. File display and download
+4. File metadata storage
