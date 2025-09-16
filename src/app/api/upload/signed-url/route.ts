@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'uploads';
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'leadfiles';
 
     if (!supabaseUrl || !serviceKey) {
       return NextResponse.json({ error: 'Supabase is not configured on the server' }, { status: 500 });

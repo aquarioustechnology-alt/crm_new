@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     // If Supabase Storage is configured, upload there (production-safe)
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'uploads';
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'leadfiles';
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);

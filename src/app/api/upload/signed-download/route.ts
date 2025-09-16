@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const fallbackBucket = process.env.SUPABASE_STORAGE_BUCKET || 'uploads';
+  const fallbackBucket = process.env.SUPABASE_STORAGE_BUCKET || 'leadfiles';
 
   if (!supabaseUrl || !serviceKey) {
     return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
