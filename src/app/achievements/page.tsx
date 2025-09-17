@@ -74,12 +74,15 @@ interface UserOption {
 }
 
 export default function AchievementsPage() {
+  const currentYear = new Date().getFullYear();
+  const currentYearString = currentYear.toString();
+  const recentYears = Array.from({ length: 6 }, (_, index) => currentYear - index);
   const { data: session } = useSession();
   const [data, setData] = useState<AchievementsData | null>(null);
   const [users, setUsers] = useState<UserOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
-    year: "2025", // Set to 2025 as current year
+    year: currentYearString,
     period: "ALL",
     userId: "ALL"
   });
@@ -157,7 +160,7 @@ export default function AchievementsPage() {
 
   const clearFilters = () => {
     setFilters({
-      year: "2025", // Set to 2025 as current year
+      year: currentYearString,
       period: "ALL",
       userId: "ALL"
     });
@@ -216,7 +219,7 @@ export default function AchievementsPage() {
                     <SelectValue placeholder="Select year" />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-700 border-slate-600">
-                    {[2025, 2024, 2023, 2022, 2021, 2020].map(year => (
+                    {recentYears.map(year => (
                       <SelectItem key={year} value={year.toString()}>
                         {year}
                       </SelectItem>
