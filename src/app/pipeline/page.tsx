@@ -92,6 +92,15 @@ export default function PipelinePage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingLeadId, setEditingLeadId] = useState<string>("");
 
+  const hasTarget = Boolean(pipelineMetrics.target);
+  const targetProgressRatio = hasTarget ? pipelineMetrics.expectedRevenue / pipelineMetrics.target : 0;
+  const targetProgressPercentage = Math.round(targetProgressRatio * 100);
+  const targetProgressWidth = Math.min(Math.max(targetProgressRatio * 100, 0), 100);
+  const targetGapValue = hasTarget ? pipelineMetrics.expectedRevenue - pipelineMetrics.target : 0;
+  const hasMetTarget = hasTarget && pipelineMetrics.expectedRevenue >= pipelineMetrics.target;
+  const isApproachingTarget = hasTarget && pipelineMetrics.expectedRevenue >= pipelineMetrics.target * 0.8;
+  const isOnTrackForTarget = hasTarget && pipelineMetrics.expectedRevenue >= pipelineMetrics.target * 0.9;
+
   // Load leads data
   async function loadLeads() {
     try {
@@ -267,12 +276,12 @@ export default function PipelinePage() {
             </div>
             <div className="text-right">
               <p className="text-2xl font-bold text-white">
-                {Math.round((pipelineMetrics.expectedRevenue / pipelineMetrics.target) * 100)}%
+                {targetProgressPercentage}%
               </p>
               <p className="text-purple-200 text-sm">of target</p>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-slate-800/50 rounded-lg p-4">
               <p className="text-slate-400 text-xs font-medium">TARGET AMOUNT</p>
@@ -284,33 +293,39 @@ export default function PipelinePage() {
             </div>
             <div className="bg-slate-800/50 rounded-lg p-4">
               <p className="text-slate-400 text-xs font-medium">GAP TO TARGET</p>
-              <p className={`text-xl font-bold ${
-                pipelineMetrics.expectedRevenue >= pipelineMetrics.target ? 'text-green-400' : 'text-red-400'
-              }`}>
-                {pipelineMetrics.expectedRevenue >= pipelineMetrics.target ? '+' : ''}
-                {formatCurrency(pipelineMetrics.expectedRevenue - pipelineMetrics.target)}
+              <p
+                className={`text-xl font-bold ${
+                  hasTarget
+                    ? hasMetTarget
+                      ? 'text-green-400'
+                      : 'text-red-400'
+                    : 'text-slate-400'
+                }`}
+              >
+                {hasMetTarget ? '+' : ''}
+                {formatCurrency(targetGapValue)}
               </p>
             </div>
           </div>
-          
+
           <div className="mt-4">
             <div className="flex items-center justify-between text-sm mb-2">
               <span className="text-slate-400">Progress to Target</span>
               <span className="text-white font-medium">
-                {Math.round((pipelineMetrics.expectedRevenue / pipelineMetrics.target) * 100)}%
+                {targetProgressPercentage}%
               </span>
             </div>
             <div className="w-full bg-slate-700 rounded-full h-3">
-              <div 
+              <div
                 className={`h-3 rounded-full transition-all duration-500 ${
-                  pipelineMetrics.expectedRevenue >= pipelineMetrics.target 
-                    ? 'bg-gradient-to-r from-green-500 to-green-400' 
-                    : pipelineMetrics.expectedRevenue >= pipelineMetrics.target * 0.8
+                  hasMetTarget
+                    ? 'bg-gradient-to-r from-green-500 to-green-400'
+                    : isApproachingTarget
                     ? 'bg-gradient-to-r from-yellow-500 to-yellow-400'
                     : 'bg-gradient-to-r from-red-500 to-red-400'
                 }`}
-                style={{ 
-                  width: `${Math.min((pipelineMetrics.expectedRevenue / pipelineMetrics.target) * 100, 100)}%` 
+                style={{
+                  width: `${targetProgressWidth}%`
                 }}
               ></div>
             </div>
@@ -367,7 +382,7 @@ export default function PipelinePage() {
           />
           <KPICard
             title="Target Achievement"
-            value={`${Math.round((pipelineMetrics.expectedRevenue / pipelineMetrics.target) * 100)}%`}
+            value={`${targetProgressPercentage}%`}
             subtitle="Forecast vs Target"
             icon={Activity}
             color="bg-red-500/20"
@@ -440,35 +455,43 @@ export default function PipelinePage() {
             <div className="border-t border-slate-600 pt-4">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-slate-400">Gap</span>
-                <span className={`text-lg font-bold ${pipelineMetrics.expectedRevenue >= pipelineMetrics.target ? 'text-red-400' : 'text-green-400'}`}>
-                  {pipelineMetrics.expectedRevenue >= pipelineMetrics.target ? '+' : ''}
-                  {formatCurrency(pipelineMetrics.expectedRevenue - pipelineMetrics.target)}
+                <span
+                  className={`text-lg font-bold ${
+                    hasTarget
+                      ? pipelineMetrics.expectedRevenue >= pipelineMetrics.target
+                        ? 'text-red-400'
+                        : 'text-green-400'
+                      : 'text-slate-400'
+                  }`}
+                >
+                  {hasTarget && pipelineMetrics.expectedRevenue >= pipelineMetrics.target ? '+' : ''}
+                  {formatCurrency(targetGapValue)}
                 </span>
               </div>
-              
+
               <div className="mt-2">
                 <div className="flex justify-between text-xs text-slate-500 mb-1">
                   <span>Progress</span>
-                  <span>{Math.round((pipelineMetrics.expectedRevenue / pipelineMetrics.target) * 100)}%</span>
+                  <span>{targetProgressPercentage}%</span>
                 </div>
                 <div className="w-full bg-slate-700 rounded-full h-2">
-                  <div 
+                  <div
                     className={`h-2 rounded-full transition-all duration-500 ${
-                      pipelineMetrics.expectedRevenue >= pipelineMetrics.target * 0.9 ? 'bg-green-500' : 'bg-red-500'
+                      isOnTrackForTarget ? 'bg-green-500' : 'bg-red-500'
                     }`}
-                    style={{ width: `${Math.min((pipelineMetrics.expectedRevenue / pipelineMetrics.target) * 100, 100)}%` }}
+                    style={{ width: `${targetProgressWidth}%` }}
                   />
                 </div>
               </div>
             </div>
-            
+
             <div className={`text-center p-3 rounded-lg ${
-              pipelineMetrics.expectedRevenue >= pipelineMetrics.target * 0.9 
-                ? 'bg-green-500/20 border border-green-500/30' 
+              isOnTrackForTarget
+                ? 'bg-green-500/20 border border-green-500/30'
                 : 'bg-red-500/20 border border-red-500/30'
             }`}>
-              <span className={`text-sm font-medium ${pipelineMetrics.expectedRevenue >= pipelineMetrics.target * 0.9 ? 'text-green-400' : 'text-red-400'}`}>
-                {pipelineMetrics.expectedRevenue >= pipelineMetrics.target * 0.9 ? '🎯 On Track' : '⚠️ Behind Target'}
+              <span className={`text-sm font-medium ${isOnTrackForTarget ? 'text-green-400' : 'text-red-400'}`}>
+                {isOnTrackForTarget ? '🎯 On Track' : '⚠️ Behind Target'}
               </span>
             </div>
           </div>
