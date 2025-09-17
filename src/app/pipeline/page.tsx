@@ -39,6 +39,9 @@ interface PipelineMetrics {
   target: number;
 }
 
+const USD_TO_INR_RATE = 83;
+const PIPELINE_STAGES = ['New Leads', 'Contacted', 'Qualified', 'Proposal', 'Won', 'Lost'] as const;
+
 // Helper function to format currency with INR
 const formatCurrency = (value: number) => {
   if (isNaN(value) || !isFinite(value)) return '₹0';
@@ -144,8 +147,6 @@ export default function PipelinePage() {
 
   // Calculate pipeline metrics
   const calculatePipelineMetrics = (leads: Lead[], targetAmount: number = 0) => {
-    const USD_TO_INR_RATE = 83;
-    
     // Filter active pipeline leads (excluding WON and LOST)
     const activeLeads = leads.filter(lead => !['WON', 'LOST'].includes(lead.status));
     const wonLeads = leads.filter(lead => lead.status === 'WON');
@@ -204,6 +205,26 @@ export default function PipelinePage() {
     setSelectedLead(lead);
     setCommentDialogOpen(true);
   };
+
+  const totalLeadsCount = allLeads.length;
+
+  const stageSummaries = PIPELINE_STAGES.map((stage) => {
+    const leadsInStage = allLeads.filter(lead => lead.status === stage.toUpperCase());
+    const totalValue = leadsInStage.reduce((sum, lead) => {
+      const rawValue = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue || '0');
+      if (isNaN(rawValue) || rawValue === 0) return sum;
+      const convertedValue = lead.currency === "USD" ? rawValue * USD_TO_INR_RATE : rawValue;
+      return sum + convertedValue;
+    }, 0);
+
+    return {
+      stage,
+      count: leadsInStage.length,
+      value: totalValue
+    };
+  });
+
+  const maxStageCount = stageSummaries.reduce((max, summary) => Math.max(max, summary.count), 0);
 
   if (isLoading) {
     return (
@@ -381,40 +402,38 @@ export default function PipelinePage() {
         <div className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600/50">
           <h3 className="text-lg font-semibold text-white mb-4">Pipeline Funnel</h3>
           <div className="space-y-4">
-            {['New Leads', 'Contacted', 'Qualified', 'Proposal', 'Won', 'Lost'].map((stage, index) => {
-              const stageLeads = allLeads.filter(lead => lead.status === stage.toUpperCase());
-              const stageValue = stageLeads.reduce((sum, lead) => {
-                const value = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue || '0');
-                if (isNaN(value) || value === 0) return sum;
-                const convertedValue = lead.currency === "USD" ? value * 83 : value;
-                return sum + convertedValue;
-              }, 0);
-              
+            {stageSummaries.map((summary, index) => {
+              const previousStageCount = index === 0 ? totalLeadsCount : stageSummaries[index - 1].count;
+              const baselineCount = previousStageCount > 0 ? previousStageCount : totalLeadsCount;
+              const widthPercent = maxStageCount > 0 ? (summary.count / maxStageCount) * 100 : 0;
+              const dropOffPercent = baselineCount > 0 ? Math.max(((baselineCount - summary.count) / baselineCount) * 100, 0) : 0;
+              const conversionPercent = baselineCount > 0 ? Math.min((summary.count / baselineCount) * 100, 100) : 0;
+
               return (
-                <div key={stage} className="relative">
+                <div key={summary.stage} className="relative">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-slate-300">{stage}</span>
+                    <span className="text-sm font-medium text-slate-300">{summary.stage}</span>
                     <div className="text-right">
-                      <div className="text-sm font-semibold text-white">{stageLeads.length} deals</div>
-                      <div className="text-xs text-slate-400">{formatCurrency(stageValue)}</div>
+                      <div className="text-sm font-semibold text-white">{summary.count} deals</div>
+                      <div className="text-xs text-slate-400">{formatCurrency(summary.value)}</div>
                     </div>
                   </div>
-                  
+
                   <div className="w-full bg-slate-700 rounded-full h-3">
-                    <div 
+                    <div
                       className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-500"
-                      style={{ width: `${(stageLeads.length / Math.max(...['New Leads', 'Contacted', 'Qualified', 'Proposal', 'Won', 'Lost'].map(s => allLeads.filter(l => l.status === s.toUpperCase()).length))) * 100}%` }}
+                      style={{ width: `${widthPercent}%` }}
                     />
                   </div>
-                  
-                  {index < 5 && (
+
+                  {index < stageSummaries.length - 1 && (
                     <div className="text-xs text-red-400 mt-1">
-                      ↓ {stageLeads.length > 0 ? Math.round((stageLeads.length / allLeads.filter(l => l.status === ['New Leads', 'Contacted', 'Qualified', 'Proposal', 'Won', 'Lost'][index].toUpperCase()).length) * 100) : 0}% drop-off
+                      ↓ {Math.round(dropOffPercent)}% drop-off
                     </div>
                   )}
-                  
+
                   <div className="text-xs text-slate-500 mt-1">
-                    {stageLeads.length > 0 ? Math.round((stageLeads.length / allLeads.filter(l => l.status === ['New Leads', 'Contacted', 'Qualified', 'Proposal', 'Won', 'Lost'][index].toUpperCase()).length) * 100) : 0}% conversion rate
+                    {Math.round(conversionPercent)}% conversion rate
                   </div>
                 </div>
               );
