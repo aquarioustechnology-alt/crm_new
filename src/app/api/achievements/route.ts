@@ -5,7 +5,13 @@ import { authOptions } from "@/lib/auth";
 import { convertCurrency } from "@/lib/currency";
 
 // Helper function to calculate targets for achievements from monthly data
-function calculateTargetsForAchievements(monthlyTargets: any[], periodFilter: string | null, yearFilter: string | null, isAdmin: boolean, userId: string | null) {
+function calculateTargetsForAchievements(
+  monthlyTargets: any[],
+  periodFilter: string | null,
+  yearFilter: string | null,
+  isAdmin: boolean,
+  requestingUserId: string | null
+) {
   let calculatedTargets: any[] = [];
   
   if (!periodFilter || periodFilter === "MONTHLY") {
@@ -34,7 +40,7 @@ function calculateTargetsForAchievements(monthlyTargets: any[], periodFilter: st
   }
   
   // Filter based on user access and userId parameter
-  return filterTargetsByAccess(calculatedTargets, isAdmin, userId);
+  return filterTargetsByAccess(calculatedTargets, isAdmin, requestingUserId);
 }
 
 function calculateMonthlyCompanyTargets(monthlyTargets: any[]) {
@@ -160,6 +166,9 @@ function filterTargetsByAccess(targets: any[], isAdmin: boolean, userId: string 
     return targets;
   } else {
     // Regular users see their own + company targets
+    if (!userId) {
+      return targets.filter(t => t.targetType === "COMPANY");
+    }
     return targets.filter(t => t.targetType === "COMPANY" || t.userId === userId);
   }
 }
@@ -178,6 +187,7 @@ export async function GET(req: Request) {
   try {
     const isAdmin = session.user.role === "ADMIN";
     const targetUserId = isAdmin && userId ? userId : session.user.id;
+    const requestingUserId = isAdmin ? userId : session.user.id;
     
 
 
@@ -218,7 +228,13 @@ export async function GET(req: Request) {
     const validMonthlyTargets = monthlyTargets.filter(target => target.user);
     
     // Calculate targets for the requested period using valid targets only
-    const targets = calculateTargetsForAchievements(validMonthlyTargets, periodFilter, yearFilter, isAdmin, userId);
+    const targets = calculateTargetsForAchievements(
+      validMonthlyTargets,
+      periodFilter,
+      yearFilter,
+      isAdmin,
+      requestingUserId
+    );
     
 
     // Track unique deals across all targets to avoid double counting
