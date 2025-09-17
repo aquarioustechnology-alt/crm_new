@@ -4,26 +4,57 @@ import AppShell from "@/components/app-shell";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Download, Plus, Users, TrendingUp, DollarSign, Target, Clock, BarChart3, Activity } from "lucide-react";
+import {
+  Download,
+  Plus,
+  Users,
+  TrendingUp,
+  DollarSign,
+  Target,
+  Clock,
+  BarChart3,
+  Activity,
+  MessageSquare,
+  Edit3,
+} from "lucide-react";
+import { useSession } from "next-auth/react";
 import { CommentDialog } from "@/components/comment-dialog";
 import { EditLeadModal } from "@/components/edit-lead-modal";
 
-type Lead = {
+type LeadOwner = {
   id: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+};
+
+export type Lead = {
+  id: string;
+  name: string;
+  ownerId: string;
+  owner?: LeadOwner | null;
   projectName?: string | null;
-  projectValue?: number | null;
+  projectValue?: number | string | null;
   projectType?: string | null;
   currency?: string | null;
-  name: string; 
-  email?: string | null; 
-  phone?: string | null; 
+  email?: string | null;
+  phone?: string | null;
   designation?: string | null;
-  company?: string | null; 
+  department?: string | null;
+  company?: string | null;
   website?: string | null;
-  status: string; 
-  source: string; 
+  status: string;
+  source: string;
   createdAt: string;
+  updatedAt: string;
   industry?: string | null;
+  tags?: string[];
+  isActive?: boolean;
+  timeline?: string | null;
+  middleName?: string | null;
+  lastName?: string | null;
+  country?: string | null;
+  photo?: string | null;
 };
 
 interface PipelineMetrics {
@@ -50,6 +81,16 @@ const formatCurrency = (value: number) => {
   return `₹${formatted}`;
 };
 
+export function canManageLead(lead: Lead, currentUserId: string | null, isAdmin: boolean) {
+  if (isAdmin) {
+    return true;
+  }
+  if (!currentUserId) {
+    return false;
+  }
+  return lead.ownerId === currentUserId;
+}
+
 // KPI Card Component
 function KPICard({ title, value, subtitle, icon: Icon, color }: {
   title: string;
@@ -75,6 +116,10 @@ function KPICard({ title, value, subtitle, icon: Icon, color }: {
 }
 
 export default function PipelinePage() {
+  const { data: session } = useSession();
+  const currentUserId = session?.user?.id ?? null;
+  const isAdmin = session?.user?.role === "ADMIN";
+
   const [allLeads, setAllLeads] = useState<Lead[]>([]);
   const [pipelineMetrics, setPipelineMetrics] = useState<PipelineMetrics>({
     totalPipelineValue: 0,
@@ -95,6 +140,8 @@ export default function PipelinePage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingLeadId, setEditingLeadId] = useState<string>("");
 
+  const canCurrentUserManageLead = (lead: Lead) => canManageLead(lead, currentUserId, isAdmin);
+
   const hasTarget = Boolean(pipelineMetrics.target);
   const targetProgressRatio = hasTarget ? pipelineMetrics.expectedRevenue / pipelineMetrics.target : 0;
   const targetProgressPercentage = Math.round(targetProgressRatio * 100);
@@ -111,7 +158,7 @@ export default function PipelinePage() {
       
       // Load leads
       const res = await fetch("/api/leads", { cache: "no-store" });
-      const data = await res.json();
+      const data: Lead[] = await res.json();
       setAllLeads(data);
       
       // Load target based on selected time range
@@ -199,8 +246,11 @@ export default function PipelinePage() {
   }, [timeRange]); // Reload when time range changes
 
   // Handle edit lead
-  const handleEditLead = (leadId: string) => {
-    setEditingLeadId(leadId);
+  const handleEditLead = (lead: Lead) => {
+    if (!canCurrentUserManageLead(lead)) {
+      return;
+    }
+    setEditingLeadId(lead.id);
     setIsEditModalOpen(true);
   };
 
@@ -211,6 +261,9 @@ export default function PipelinePage() {
 
   // Handle comment
   const handleComment = (lead: Lead) => {
+    if (!canCurrentUserManageLead(lead)) {
+      return;
+    }
     setSelectedLead(lead);
     setCommentDialogOpen(true);
   };
@@ -234,6 +287,12 @@ export default function PipelinePage() {
   });
 
   const maxStageCount = stageSummaries.reduce((max, summary) => Math.max(max, summary.count), 0);
+
+  const activeOpportunities = allLeads
+    .filter((lead) => lead.isActive !== false)
+    .slice(0, 6);
+
+  const totalActiveLeadCount = allLeads.filter((lead) => lead.isActive !== false).length;
 
   if (isLoading) {
     return (
@@ -625,6 +684,128 @@ export default function PipelinePage() {
                   </div>
                 );
               })
+            )}
+          </div>
+      </div>
+    </div>
+
+      {/* Active Opportunities */}
+      <div className="mt-8">
+        <div className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600/50">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-semibold text-white">Active Opportunities</h3>
+              <p className="text-slate-400 text-sm">
+                Quick access to the leads currently moving through your pipeline
+              </p>
+            </div>
+            <div className="text-sm text-slate-500">
+              Showing {activeOpportunities.length} of {totalActiveLeadCount} active leads
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {activeOpportunities.length > 0 ? (
+              activeOpportunities.map((lead) => {
+                const canManage = canCurrentUserManageLead(lead);
+                const rawValue =
+                  typeof lead.projectValue === "number"
+                    ? lead.projectValue
+                    : lead.projectValue
+                    ? parseFloat(lead.projectValue)
+                    : 0;
+                const convertedValue = lead.currency === "USD" ? rawValue * USD_TO_INR_RATE : rawValue;
+                const formattedValue =
+                  Number.isNaN(convertedValue) || convertedValue === 0 ? null : formatCurrency(convertedValue);
+                const ownerName = lead.owner
+                  ? [lead.owner.firstName, lead.owner.lastName].filter(Boolean).join(" ").trim() || lead.owner.email || "Unknown owner"
+                  : lead.ownerId === currentUserId
+                  ? "You"
+                  : "Team member";
+                const statusLabel = lead.status
+                  ? lead.status
+                      .split("_")
+                      .map((part) => part.charAt(0) + part.slice(1).toLowerCase())
+                      .join(" ")
+                  : "";
+                const createdDate = new Date(lead.createdAt);
+                const createdAtLabel = Number.isNaN(createdDate.getTime())
+                  ? null
+                  : createdDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                const baseTooltip = "Only the lead owner or admins can manage this lead";
+
+                return (
+                  <div
+                    key={lead.id}
+                    className="bg-slate-800/60 border border-slate-700/60 rounded-lg p-4"
+                  >
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-white font-semibold text-sm md:text-base truncate">
+                            {lead.name}
+                          </span>
+                          {lead.company && (
+                            <span className="text-xs text-slate-400 truncate">• {lead.company}</span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-slate-500">
+                          <span>Owner: {ownerName}</span>
+                          {createdAtLabel && <span>Created {createdAtLabel}</span>}
+                          {!canManage && !isAdmin && <span className="text-amber-400 font-medium">View only</span>}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-4 md:flex-shrink-0">
+                        <div className="text-right">
+                          <div className="text-xs font-semibold text-purple-300 uppercase tracking-wide">
+                            {statusLabel}
+                          </div>
+                          {formattedValue && (
+                            <div className="text-sm font-semibold text-emerald-400">{formattedValue}</div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={!canManage}
+                            onClick={() => handleComment(lead)}
+                            className={`h-8 w-8 p-0 rounded-md ${
+                              canManage
+                                ? "text-slate-400 hover:text-purple-400 hover:bg-purple-500/10"
+                                : "text-slate-500"
+                            }`}
+                            title={canManage ? "View and add comments" : baseTooltip}
+                            aria-label={canManage ? "View and add comments" : baseTooltip}
+                          >
+                            <MessageSquare className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={!canManage}
+                            onClick={() => handleEditLead(lead)}
+                            className={`h-8 w-8 p-0 rounded-md ${
+                              canManage
+                                ? "text-slate-400 hover:text-blue-400 hover:bg-blue-500/10"
+                                : "text-slate-500"
+                            }`}
+                            title={canManage ? "Edit lead" : baseTooltip}
+                            aria-label={canManage ? "Edit lead" : baseTooltip}
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="text-slate-400 text-sm text-center py-8">
+                No active opportunities available yet.
+              </p>
             )}
           </div>
         </div>
