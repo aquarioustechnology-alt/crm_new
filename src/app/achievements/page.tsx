@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Trophy, Target, TrendingUp, Calendar, Filter, Users } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
 import AppShell from "@/components/app-shell";
@@ -67,10 +66,17 @@ interface AchievementsData {
   };
 }
 
+interface UserOption {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
 export default function AchievementsPage() {
   const { data: session } = useSession();
   const [data, setData] = useState<AchievementsData | null>(null);
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<UserOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     year: "2025", // Set to 2025 as current year
@@ -82,16 +88,39 @@ export default function AchievementsPage() {
 
   // Fetch users for admin dropdown
   useEffect(() => {
-    if (isAdmin) {
-      fetch("/api/users")
-        .then(res => res.json())
-        .then(userData => {
-          if (userData.users) {
-            setUsers(userData.users);
-          }
-        })
-        .catch(() => {});
+    if (!isAdmin) {
+      return;
     }
+
+    let isMounted = true;
+
+    const loadUsers = async () => {
+      try {
+        const response = await fetch("/api/users");
+        if (!response.ok) {
+          return;
+        }
+
+        const userData = await response.json();
+        const normalizedUsers = Array.isArray(userData)
+          ? userData
+          : userData?.users ?? [];
+
+        if (isMounted) {
+          setUsers(normalizedUsers as UserOption[]);
+        }
+      } catch {
+        if (isMounted) {
+          setUsers([]);
+        }
+      }
+    };
+
+    loadUsers();
+
+    return () => {
+      isMounted = false;
+    };
   }, [isAdmin]);
 
   // Fetch achievements data
@@ -112,7 +141,7 @@ export default function AchievementsPage() {
         const achievementsData = await response.json();
         setData(achievementsData);
       }
-    } catch (error) {
+    } catch {
       // Error handled
     } finally {
       setLoading(false);
