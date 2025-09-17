@@ -20,7 +20,29 @@
 }
 
 @layer components {
-  .card { @apply bg-slate-800 text-slate-100 rounded-xl shadow border border-slate-700; }
+  .card { 
+    @apply bg-slate-800 text-slate-100 rounded-xl shadow border border-slate-700 
+           transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10 
+           hover:border-slate-600; 
+  }
+  
+  /* Enhanced button animations */
+  .btn-primary {
+    @apply bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700
+           transform transition-all duration-200 hover:scale-105 active:scale-95
+           shadow-lg hover:shadow-purple-500/25;
+  }
+  
+  .btn-secondary {
+    @apply bg-slate-700 hover:bg-slate-600 border border-slate-600 hover:border-slate-500
+           transform transition-all duration-200 hover:scale-105 active:scale-95;
+  }
+  
+  /* Enhanced table animations */
+  .table-row {
+    @apply transition-all duration-200 hover:bg-slate-700/50 hover:scale-[1.01] 
+           hover:shadow-sm hover:shadow-purple-500/10;
+  }
   
   /* Custom scrollbar styles */
   .scrollbar-thin {
@@ -40,15 +62,55 @@
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background: rgb(71 85 105);
     border-radius: 3px;
+    transition: background 0.2s ease;
   }
   
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background: rgb(100 116 139);
   }
 
+  /* Loading skeleton animations */
+  .skeleton {
+    @apply bg-gradient-to-r from-slate-700 via-slate-600 to-slate-700 bg-[length:200%_100%] animate-pulse;
+    animation: shimmer 2s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  
+  /* Enhanced modal animations */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/50 backdrop-blur-sm 
+           transition-all duration-300 ease-out;
+  }
+  
+  .modal-content {
+    @apply transform transition-all duration-300 ease-out
+           scale-95 opacity-0 data-[state=open]:scale-100 data-[state=open]:opacity-100;
+  }
+
   /* Rich text editor placeholder */
   .placeholder {
     color: rgb(156 163 175) !important;
     font-style: italic;
+  }
+  
+  /* Status badge animations */
+  .status-badge {
+    @apply transition-all duration-200 hover:scale-110 cursor-pointer;
+  }
+  
+  /* Form input focus states */
+  .form-input {
+    @apply transition-all duration-200 focus:ring-2 focus:ring-purple-500/50 
+           focus:border-purple-500 hover:border-slate-500;
+  }
+  
+  /* Navigation link hover states */
+  .nav-link {
+    @apply transition-all duration-200 hover:bg-slate-700/50 hover:transform hover:scale-105
+           hover:shadow-lg rounded-lg;
   }
 }

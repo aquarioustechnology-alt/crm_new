@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { CheckCircle, Target, X, Trophy, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,19 +23,24 @@ export function TargetAchievementNotification() {
   const abortRef = useRef<AbortController | null>(null);
   const hasLoggedRef = useRef(false);
 
-  // Check for new achievements
-  const checkAchievements = async () => {
+  // Check for new achievements with caching and optimization
+  const checkAchievements = useCallback(async () => {
     // Only run when authenticated and browser is online
     if (status !== "authenticated" || typeof window === "undefined" || !navigator.onLine) return;
+    
     try {
       // Abort any in-flight request before starting a new one
       abortRef.current?.abort();
       const controller = new AbortController();
       abortRef.current = controller;
 
+      // Add caching headers to reduce server load
       const response = await fetch("/api/targets/progress?period=MONTHLY", {
-        cache: "no-store",
+        cache: "default", // Allow browser caching for 1 minute
         signal: controller.signal,
+        headers: {
+          "Cache-Control": "max-age=60", // 1 minute cache
+        },
       });
       if (response.ok) {
         const data = await response.json();
@@ -94,7 +99,7 @@ export function TargetAchievementNotification() {
         hasLoggedRef.current = true;
       }
     }
-  };
+  }, [status]); // Add dependency array for useCallback
 
   // Check achievements on mount/status change and then every 5 minutes
   useEffect(() => {
@@ -117,15 +122,15 @@ export function TargetAchievementNotification() {
     });
   }, [visibleAchievements]);
 
-  const dismissAchievement = (achievementId: string) => {
+  const dismissAchievement = useCallback((achievementId: string) => {
     setVisibleAchievements(prev => prev.filter(a => a.id !== achievementId));
-  };
+  }, []);
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = useCallback((amount: number) => {
     return `₹${amount.toLocaleString()}`;
-  };
+  }, []);
 
-  const getIcon = (type: Achievement["type"]) => {
+  const getIcon = useMemo(() => (type: Achievement["type"]) => {
     switch (type) {
       case "TARGET_ACHIEVED":
         return <Target className="w-6 h-6 text-green-400" />;
@@ -136,7 +141,7 @@ export function TargetAchievementNotification() {
       default:
         return <CheckCircle className="w-6 h-6 text-green-400" />;
     }
-  };
+  }, []);
 
   const getColors = (type: Achievement["type"]) => {
     switch (type) {

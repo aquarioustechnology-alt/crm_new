@@ -4,13 +4,20 @@ interface SkeletonProps {
   className?: string;
   height?: string;
   width?: string;
+  variant?: 'default' | 'shimmer';
 }
 
-export function Skeleton({ className = '', height = 'h-4', width = 'w-full' }: SkeletonProps) {
+export function Skeleton({ 
+  className = '', 
+  height = 'h-4', 
+  width = 'w-full',
+  variant = 'shimmer'
+}: SkeletonProps) {
+  const baseClass = `rounded ${height} ${width} ${className}`;
+  const variantClass = variant === 'shimmer' ? 'skeleton' : 'animate-pulse bg-slate-700';
+  
   return (
-    <div 
-      className={`animate-pulse bg-slate-700 rounded ${height} ${width} ${className}`}
-    />
+    <div className={`${baseClass} ${variantClass}`} />
   );
 }
 
