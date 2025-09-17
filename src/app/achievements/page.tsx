@@ -104,7 +104,7 @@ export default function AchievementsPage() {
     try {
       const params = new URLSearchParams();
       if (filters.year) params.append("year", filters.year);
-      if (filters.period && filters.period !== "ALL") params.append("period", filters.period);
+      if (filters.period) params.append("period", filters.period);
       if (filters.userId && filters.userId !== "ALL") params.append("userId", filters.userId);
 
       const response = await fetch(`/api/achievements?${params.toString()}`);

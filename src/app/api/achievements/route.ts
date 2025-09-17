@@ -8,10 +8,18 @@ import { convertCurrency } from "@/lib/currency";
 function calculateTargetsForAchievements(monthlyTargets: any[], periodFilter: string | null, yearFilter: string | null, isAdmin: boolean, userId: string | null) {
   let calculatedTargets: any[] = [];
   
-  if (!periodFilter || periodFilter === "MONTHLY") {
+  if (periodFilter === "ALL") {
+    // Return all periods (monthly, quarterly, yearly)
+    const monthly = [...monthlyTargets, ...calculateMonthlyCompanyTargets(monthlyTargets)];
+    const quarterlyUserTargets = calculateQuarterlyFromMonthly(monthlyTargets);
+    const quarterly = [...quarterlyUserTargets, ...calculateQuarterlyCompanyTargets(quarterlyUserTargets)];
+    const yearlyUserTargets = calculateYearlyFromMonthly(monthlyTargets);
+    const yearly = [...yearlyUserTargets, ...calculateYearlyCompanyTargets(yearlyUserTargets)];
+    calculatedTargets = [...monthly, ...quarterly, ...yearly];
+  } else if (!periodFilter || periodFilter === "MONTHLY") {
     // Return monthly user targets + calculated company targets
     calculatedTargets = [...monthlyTargets];
-    
+
     // Add company targets (sum of all users for each month)
     const companyTargets = calculateMonthlyCompanyTargets(monthlyTargets);
     calculatedTargets.push(...companyTargets);
@@ -26,11 +34,8 @@ function calculateTargetsForAchievements(monthlyTargets: any[], periodFilter: st
     const yearlyCompanyTargets = calculateYearlyCompanyTargets(yearlyUserTargets);
     calculatedTargets = [...yearlyUserTargets, ...yearlyCompanyTargets];
   } else {
-    // Return all periods
-    const monthly = [...monthlyTargets, ...calculateMonthlyCompanyTargets(monthlyTargets)];
-    const quarterly = [...calculateQuarterlyFromMonthly(monthlyTargets), ...calculateQuarterlyCompanyTargets(calculateQuarterlyFromMonthly(monthlyTargets))];
-    const yearly = [...calculateYearlyFromMonthly(monthlyTargets), ...calculateYearlyCompanyTargets(calculateYearlyFromMonthly(monthlyTargets))];
-    calculatedTargets = [...monthly, ...quarterly, ...yearly];
+    // Fallback to monthly if an unknown period is provided
+    calculatedTargets = [...monthlyTargets, ...calculateMonthlyCompanyTargets(monthlyTargets)];
   }
   
   // Filter based on user access and userId parameter
