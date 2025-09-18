@@ -784,7 +784,7 @@ export default function NewLead() {
 
             {msg && <p className="text-red-400 text-sm mt-4">{msg}</p>}
 
-            <div className="sticky bottom-0 z-10 bg-slate-800/95 backdrop-blur supports-[backdrop-filter]:bg-slate-800/80 flex justify-between items-center mt-8 pt-6 border-t border-slate-700">
+            <div className="sticky bottom-0 z-10 bg-slate-800/95 backdrop-blur supports-[backdrop-filter]:bg-slate-800/80 flex justify-between items-center mt-8 pt-6 border-t border-slate-700 rounded-b-xl">
               <Button 
                 type="button" 
                 variant="ghost" 

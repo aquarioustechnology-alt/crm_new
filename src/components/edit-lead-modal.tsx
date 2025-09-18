@@ -300,7 +300,7 @@ export function EditLeadModal({ isOpen, onClose, leadId, onLeadUpdated }: EditLe
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-slate-900 border-slate-700" onInteractOutside={(e) => e.preventDefault()}>
-          <DialogHeader className="border-b border-slate-700 pb-4">
+          <DialogHeader className="border-b border-slate-700 pb-4 rounded-t-xl">
             <DialogTitle className="text-xl font-semibold text-white flex items-center gap-2">
               <Save className="w-5 h-5" />
               Edit Lead
@@ -320,7 +320,7 @@ export function EditLeadModal({ isOpen, onClose, leadId, onLeadUpdated }: EditLe
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-slate-900 border-slate-700" onInteractOutside={(e) => e.preventDefault()}>
-        <DialogHeader className="border-b border-slate-700 pb-4">
+        <DialogHeader className="border-b border-slate-700 pb-4 rounded-t-xl">
           <DialogTitle className="text-xl font-semibold text-white flex items-center gap-2">
             <Save className="w-5 h-5" />
             Edit Lead
@@ -720,7 +720,7 @@ export function EditLeadModal({ isOpen, onClose, leadId, onLeadUpdated }: EditLe
         </div>
 
         {/* Navigation Buttons */}
-        <div className="sticky bottom-0 z-10 bg-slate-900/95 backdrop-blur supports-[backdrop-filter]:bg-slate-900/80 flex justify-between items-center pt-6 border-t border-slate-700">
+        <div className="sticky bottom-0 z-10 bg-slate-900/95 backdrop-blur supports-[backdrop-filter]:bg-slate-900/80 flex justify-between items-center pt-6 border-t border-slate-700 rounded-b-xl">
           <Button
             variant="ghost"
             onClick={onClose}

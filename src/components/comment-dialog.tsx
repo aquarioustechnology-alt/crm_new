@@ -408,7 +408,7 @@ export function CommentDialog({ isOpen, onClose, leadId, leadName }: CommentDial
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] min-h-[600px] overflow-hidden flex flex-col bg-slate-900 border-slate-700 shadow-2xl backdrop-blur-sm" onInteractOutside={(e) => e.preventDefault()}>
-        <DialogHeader className="border-b border-slate-700 pb-4 flex-shrink-0">
+        <DialogHeader className="border-b border-slate-700 pb-4 flex-shrink-0 rounded-t-xl">
           <DialogTitle className="flex items-center gap-2 text-white text-xl">
             <MessageSquare className="w-5 h-5" />
             Comments - {leadName}
@@ -416,7 +416,7 @@ export function CommentDialog({ isOpen, onClose, leadId, leadName }: CommentDial
         </DialogHeader>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-slate-700 flex-shrink-0">
+        <div className="flex border-b border-slate-700 flex-shrink-0 rounded-t-xl">
           <button
             onClick={() => setActiveTab('comments')}
             className={cn(

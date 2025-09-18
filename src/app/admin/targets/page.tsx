@@ -342,7 +342,7 @@ export default function TargetManagementPage() {
                   const yearlyAmount = monthlyAmount * 12;
                   
                   return (
-                    <tr key={target.id} className="border-t border-slate-600/30 hover:bg-slate-700/20 transition-colors">
+                    <tr key={target.id} className="border-t border-slate-600/30 hover:bg-slate-700/20 transition-colors rounded-lg">
                       <td className="p-4">
                         {target.user ? (
                           <div>

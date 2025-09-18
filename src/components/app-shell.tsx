@@ -33,9 +33,9 @@ export default function AppShell({ children }: AppShellProps) {
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-slate-800 border-r border-slate-700 flex flex-col">
+      <aside className="w-64 bg-slate-800 border-r border-slate-700 rounded-r-xl flex flex-col">
         {/* Logo */}
-        <div className="p-6 border-b border-slate-700">
+        <div className="p-6 border-b border-slate-700 rounded-t-r-xl">
           <Link href="/dashboard" className="text-xl font-semibold flex items-center gap-2">
             <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">A</span>
@@ -125,7 +125,7 @@ export default function AppShell({ children }: AppShellProps) {
         </nav>
 
         {/* User Section */}
-        <div className="p-4 border-t border-slate-700">
+        <div className="p-4 border-t border-slate-700 rounded-b-r-xl">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
               <span className="text-white font-bold text-sm">
@@ -159,7 +159,7 @@ export default function AppShell({ children }: AppShellProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 bg-slate-900">
+      <main className="flex-1 bg-slate-900 rounded-l-xl">
         <div className="p-8">
           {children}
         </div>

@@ -401,7 +401,7 @@ export default function UserManagementPage() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-slate-600/30">
+              <tr className="border-b border-slate-600/30 rounded-t-xl">
                 <th className="text-left p-4 text-sm font-semibold text-slate-300">User</th>
                 <th className="text-left p-4 text-sm font-semibold text-slate-300">Contact</th>
                 <th className="text-left p-4 text-sm font-semibold text-slate-300">Role</th>
@@ -415,7 +415,7 @@ export default function UserManagementPage() {
               {filteredUsers.map((user) => (
                 <tr
                   key={user.id}
-                  className="border-t border-slate-600/30 hover:bg-slate-700/20 transition-colors"
+                  className="border-t border-slate-600/30 hover:bg-slate-700/20 transition-colors rounded-lg"
                 >
                   <td className="p-4">
                     <div>

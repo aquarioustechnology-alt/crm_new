@@ -332,7 +332,7 @@ export default function DashboardPage() {
             {/* Individual Targets */}
             {dashboardData && dashboardData.progress.length > 0 && (
               <div className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl border border-slate-600/50 overflow-hidden">
-                <div className="p-6 border-b border-slate-600/50">
+                <div className="p-6 border-b border-slate-600/50 rounded-t-xl">
                   <h2 className="text-xl font-semibold text-white mb-2">Your Targets</h2>
                   <p className="text-slate-400">Track your progress across all assigned targets</p>
                 </div>

@@ -820,7 +820,7 @@ export default function LeadsPage() {
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-300">Status</label>
             <Select value={status} onValueChange={setStatus}>
-              <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white rounded-lg py-2 h-auto">
+              <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white rounded-xl py-2 h-auto">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent className="bg-slate-700 border-slate-600">
@@ -832,7 +832,7 @@ export default function LeadsPage() {
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-300">Source</label>
             <Select value={source} onValueChange={setSource}>
-              <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white rounded-lg py-2 h-auto">
+              <SelectTrigger className="bg-slate-700/50 border-slate-600 text-white rounded-xl py-2 h-auto">
                 <SelectValue placeholder="Filter by source" />
               </SelectTrigger>
               <SelectContent className="bg-slate-700 border-slate-600">
@@ -844,7 +844,7 @@ export default function LeadsPage() {
           {/* Active/Inactive/All filter */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-300">Status Filter</label>
-            <div className="flex bg-slate-700/50 border border-slate-600 rounded-lg overflow-hidden">
+            <div className="flex bg-slate-700/50 border border-slate-600 rounded-xl overflow-hidden">
               {(["active","inactive","all"] as const).map(key => (
                 <button
                   key={key}
@@ -865,13 +865,13 @@ export default function LeadsPage() {
             <div className="flex gap-2">
               <Button 
                 variant="outline" 
-                className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg px-4 py-2 text-sm transition-all duration-200"
+                className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white rounded-xl px-4 py-2 text-sm transition-all duration-200"
                 onClick={() => setIsFilterOpen(true)}
               >
                 <Filter className="w-4 h-4 mr-2" />
                 Advanced Filters
               </Button>
-              <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg px-4 py-2 text-sm transition-all duration-200">
+              <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white rounded-xl px-4 py-2 text-sm transition-all duration-200">
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </Button>
@@ -884,7 +884,7 @@ export default function LeadsPage() {
        <div className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl overflow-hidden border border-slate-600/50 shadow-xl">
          <div className="overflow-x-hidden">
            <table className="w-full table-auto text-sm">
-             <thead className="bg-slate-700/20">
+             <thead className="bg-slate-700/20 rounded-t-xl">
                <tr>
                  <th className="text-left px-4 py-4 font-semibold text-slate-300 text-xs uppercase tracking-wider border-b border-slate-600/20">Lead Code</th>
                  <th className="text-left px-4 py-4 font-semibold text-slate-300 text-xs uppercase tracking-wider border-b border-slate-600/20">Photo</th>
@@ -1186,7 +1186,7 @@ export default function LeadsPage() {
 
                  {/* Enhanced Pagination */}
          {filteredLeads.length > 0 && (
-           <div className="bg-slate-700/30 px-4 py-3 border-t border-slate-600/30">
+           <div className="bg-slate-700/30 px-4 py-3 border-t border-slate-600/30 rounded-b-xl">
              <div className="flex items-center justify-between">
                <div className="text-slate-400 text-xs">
                  Showing {startIndex + 1} to {Math.min(endIndex, filteredLeads.length)} of {filteredLeads.length} leads
@@ -1197,7 +1197,7 @@ export default function LeadsPage() {
                   size="sm"
                   onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
-                  className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg transition-all duration-200"
+                  className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white rounded-xl transition-all duration-200"
                 >
                   <ChevronLeft className="w-4 h-4 mr-1" />
                   Previous
@@ -1229,7 +1229,7 @@ export default function LeadsPage() {
                   size="sm"
                   onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg transition-all duration-200"
+                  className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white rounded-xl transition-all duration-200"
                 >
                   Next
                   <ChevronRight className="w-4 h-4 ml-1" />
@@ -1252,7 +1252,7 @@ export default function LeadsPage() {
             <div>
               <Label className="text-sm font-medium text-slate-200">Project Type</Label>
               <Select value={filterProjectType} onValueChange={setFilterProjectType}>
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white rounded-lg mt-1">
+                <SelectTrigger className="bg-slate-700 border-slate-600 text-white rounded-xl mt-1">
                   <SelectValue placeholder="Select project type" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-700 border-slate-600">
@@ -1270,7 +1270,7 @@ export default function LeadsPage() {
             <div>
               <Label className="text-sm font-medium text-slate-200">Status</Label>
               <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white rounded-lg mt-1">
+                <SelectTrigger className="bg-slate-700 border-slate-600 text-white rounded-xl mt-1">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-700 border-slate-600">
@@ -1284,7 +1284,7 @@ export default function LeadsPage() {
             <div>
               <Label className="text-sm font-medium text-slate-200">Source</Label>
               <Select value={filterSource} onValueChange={setFilterSource}>
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white rounded-lg mt-1">
+                <SelectTrigger className="bg-slate-700 border-slate-600 text-white rounded-xl mt-1">
                   <SelectValue placeholder="Select source" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-700 border-slate-600">
@@ -1305,7 +1305,7 @@ export default function LeadsPage() {
                     placeholder="0"
                     value={filterMinValue}
                     onChange={(e) => setFilterMinValue(e.target.value)}
-                    className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 rounded-lg"
+                    className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 rounded-xl"
                   />
                 </div>
                 <div>
@@ -1315,7 +1315,7 @@ export default function LeadsPage() {
                     placeholder="8"
                     value={filterMaxValue}
                     onChange={(e) => setFilterMaxValue(e.target.value)}
-                    className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 rounded-lg"
+                    className="bg-slate-700 border-slate-600 text-white placeholder:text-slate-400 rounded-xl"
                   />
                 </div>
               </div>
@@ -1325,7 +1325,7 @@ export default function LeadsPage() {
             <div>
               <Label className="text-sm font-medium text-slate-200">Currency</Label>
               <Select value={filterCurrency} onValueChange={setFilterCurrency}>
-                <SelectTrigger className="bg-slate-700 border-slate-600 text-white rounded-lg mt-1">
+                <SelectTrigger className="bg-slate-700 border-slate-600 text-white rounded-xl mt-1">
                   <SelectValue placeholder="Select currency" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-700 border-slate-600">
@@ -1338,7 +1338,7 @@ export default function LeadsPage() {
           </div>
 
           {/* Filter Actions */}
-          <div className="flex justify-between items-center pt-6 border-t border-slate-700">
+          <div className="flex justify-between items-center pt-6 border-t border-slate-700 rounded-b-xl">
             <Button 
               variant="ghost" 
               onClick={clearFilters}
@@ -1358,7 +1358,7 @@ export default function LeadsPage() {
               </Button>
               <Button 
                 onClick={applyFilters}
-                className="bg-purple-600 hover:bg-purple-700 rounded-lg"
+                className="bg-purple-600 hover:bg-purple-700 rounded-xl"
               >
                 Apply Filters
               </Button>

@@ -61,7 +61,7 @@ export function AchievementsTable({ achievements, isAdmin, loading }: Achievemen
         <table className="w-full table-auto text-sm">
           <thead className="bg-slate-700/20">
             <tr>
-              <th className="text-left px-4 py-4 font-semibold text-slate-300 text-xs uppercase tracking-wider border-b border-slate-600/20">Period</th>
+              <th className="text-left px-4 py-4 font-semibold text-slate-300 text-xs uppercase tracking-wider border-b border-slate-600/20 rounded-tl-xl">Period</th>
               <th className="text-left px-4 py-4 font-semibold text-slate-300 text-xs uppercase tracking-wider border-b border-slate-600/20">Type</th>
               {isAdmin && (
                 <th className="text-left px-4 py-4 font-semibold text-slate-300 text-xs uppercase tracking-wider border-b border-slate-600/20">User</th>
@@ -70,7 +70,7 @@ export function AchievementsTable({ achievements, isAdmin, loading }: Achievemen
               <th className="text-right px-4 py-4 font-semibold text-slate-300 text-xs uppercase tracking-wider border-b border-slate-600/20">Achieved</th>
               <th className="text-center px-4 py-4 font-semibold text-slate-300 text-xs uppercase tracking-wider border-b border-slate-600/20">Progress</th>
               <th className="text-center px-4 py-4 font-semibold text-slate-300 text-xs uppercase tracking-wider border-b border-slate-600/20">Status</th>
-              <th className="text-center px-4 py-4 font-semibold text-slate-300 text-xs uppercase tracking-wider border-b border-slate-600/20">Deals</th>
+              <th className="text-center px-4 py-4 font-semibold text-slate-300 text-xs uppercase tracking-wider border-b border-slate-600/20 rounded-tr-xl">Deals</th>
             </tr>
           </thead>
           <tbody>

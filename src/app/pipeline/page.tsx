@@ -530,7 +530,7 @@ export default function PipelinePage() {
               <span className="text-lg font-bold text-green-400">{formatCurrency(pipelineMetrics.expectedRevenue)}</span>
             </div>
             
-            <div className="border-t border-slate-600 pt-4">
+            <div className="border-t border-slate-600 pt-4 rounded-b-xl">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-slate-400">Gap</span>
                 <span
