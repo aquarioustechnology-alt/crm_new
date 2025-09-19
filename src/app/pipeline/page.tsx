@@ -369,7 +369,7 @@ export default function PipelinePage() {
               Export Report
             </Button>
             <Link href="/leads/new">
-              <Button className="bg-purple-600 hover:bg-purple-700 rounded-lg">
+              <Button className="bg-purple-600 hover:bg-purple-700 rounded-full">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Lead
               </Button>
