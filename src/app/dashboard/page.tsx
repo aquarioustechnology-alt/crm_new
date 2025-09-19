@@ -183,12 +183,12 @@ export default function DashboardPage() {
           
           <div className="flex items-center gap-4">
             {/* Period Selector */}
-            <div className="flex bg-slate-800 rounded-lg p-1">
+            <div className="flex bg-slate-800 rounded-full p-1 overflow-hidden">
               {["MONTHLY", "QUARTERLY", "YEARLY"].map((period) => (
                 <button
                   key={period}
                   onClick={() => setSelectedPeriod(period)}
-                  className={`px-3 py-1.5 text-sm rounded-md transition-all ${
+                  className={`px-3 py-1.5 text-sm rounded-full transition-all ${
                     selectedPeriod === period
                       ? "bg-purple-600 text-white"
                       : "text-slate-400 hover:text-white"
@@ -201,12 +201,12 @@ export default function DashboardPage() {
 
             {/* Admin View Mode */}
             {isAdmin && (
-              <div className="flex items-center gap-2 bg-slate-800 rounded-lg p-1">
+              <div className="flex items-center gap-2 bg-slate-800 rounded-full p-1 overflow-hidden">
                 {(['COMPANY','USER'] as const).map(mode => (
                   <button
                     key={mode}
                     onClick={() => setViewMode(mode)}
-                    className={`px-3 py-1.5 text-sm rounded-md transition-all ${
+                    className={`px-3 py-1.5 text-sm rounded-full transition-all ${
                       viewMode === mode
                         ? "bg-blue-600 text-white"
                         : "text-slate-400 hover:text-white"
@@ -235,7 +235,7 @@ export default function DashboardPage() {
             )}
             
             <Link href="/leads/new">
-              <Button className="bg-purple-600 hover:bg-purple-700">
+              <Button className="bg-purple-600 hover:bg-purple-700 rounded-lg">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Lead
               </Button>
