@@ -28,7 +28,7 @@ type LeadOwner = {
   email: string | null;
 };
 
-export type Lead = {
+type Lead = {
   id: string;
   name: string;
   ownerId: string;
@@ -81,7 +81,7 @@ const formatCurrency = (value: number) => {
   return `₹${formatted}`;
 };
 
-export function canManageLead(lead: Lead, currentUserId: string | null, isAdmin: boolean) {
+function canManageLead(lead: Lead, currentUserId: string | null, isAdmin: boolean) {
   if (isAdmin) {
     return true;
   }
