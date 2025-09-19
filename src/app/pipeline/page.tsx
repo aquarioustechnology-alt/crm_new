@@ -358,13 +358,20 @@ export default function PipelinePage() {
                   variant={timeRange === range ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setTimeRange(range)}
-                  className={timeRange === range ? "bg-purple-600 text-white" : "text-slate-400 hover:text-white"}
+                  className={`rounded-lg ${
+                    timeRange === range
+                      ? "bg-purple-600 text-white"
+                      : "text-slate-400 hover:text-white"
+                  }`}
                 >
                   {range.charAt(0).toUpperCase() + range.slice(1)}
                 </Button>
               ))}
             </div>
-            <Button variant="outline" className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white">
+            <Button
+              variant="outline"
+              className="rounded-lg border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
+            >
               <Download className="w-4 h-4 mr-2" />
               Export Report
             </Button>
