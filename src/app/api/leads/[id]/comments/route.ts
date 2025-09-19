@@ -9,13 +9,13 @@ type AttachmentInput = {
   fileUrl: string;
 };
 
-async function ensureLeadAccess(leadId: string) {
+async function ensureLeadAccess(
+  leadId: string
+): Promise<NextResponse<{ error: string }> | null> {
   const user = await getCurrentUser();
 
   if (!user) {
-    return {
-      error: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
-    } as const;
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const lead = await prisma.lead.findUnique({
@@ -27,18 +27,14 @@ async function ensureLeadAccess(leadId: string) {
   const isOwner = lead?.ownerId === user.id;
 
   if (!isAdmin && !isOwner) {
-    return {
-      error: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
-    } as const;
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   if (!lead) {
-    return {
-      error: NextResponse.json({ error: "Lead not found" }, { status: 404 }),
-    } as const;
+    return NextResponse.json({ error: "Lead not found" }, { status: 404 });
   }
 
-  return { user, lead } as const;
+  return null;
 }
 
 // GET - Fetch all comments for a lead
@@ -48,10 +44,10 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const authResult = await ensureLeadAccess(id);
+    const authError = await ensureLeadAccess(id);
 
-    if ("error" in authResult) {
-      return authResult.error;
+    if (authError) {
+      return authError;
     }
 
     const comments = await prisma.comment.findMany({
@@ -83,10 +79,10 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
-    const authResult = await ensureLeadAccess(id);
+    const authError = await ensureLeadAccess(id);
 
-    if ("error" in authResult) {
-      return authResult.error;
+    if (authError) {
+      return authError;
     }
 
     const body = (await request.json()) as {
