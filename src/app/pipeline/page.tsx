@@ -294,6 +294,38 @@ export default function PipelinePage() {
 
   const totalActiveLeadCount = allLeads.filter((lead) => lead.isActive !== false).length;
 
+  const leadsBySourceSummary = Object.values(
+    allLeads.reduce(
+      (acc, lead) => {
+        const sourceKey = lead.source?.trim() || "Unknown";
+        const rawValue =
+          typeof lead.projectValue === "number"
+            ? lead.projectValue
+            : lead.projectValue
+            ? parseFloat(lead.projectValue)
+            : 0;
+        const numericValue = Number.isFinite(rawValue) ? rawValue : 0;
+        const revenueInInr = lead.currency === "USD" ? numericValue * USD_TO_INR_RATE : numericValue;
+
+        if (!acc[sourceKey]) {
+          acc[sourceKey] = { source: sourceKey, count: 0, revenue: 0 };
+        }
+
+        acc[sourceKey].count += 1;
+        acc[sourceKey].revenue += revenueInInr;
+
+        return acc;
+      },
+      {} as Record<string, { source: string; count: number; revenue: number }>
+    )
+  ).sort((a, b) => {
+    if (b.revenue === a.revenue) {
+      return b.count - a.count;
+    }
+
+    return b.revenue - a.revenue;
+  });
+
   if (isLoading) {
     return (
       <AppShell>
@@ -660,34 +692,31 @@ export default function PipelinePage() {
           </div>
         </div>
         
-        {/* Lost Deals Analysis */}
+        {/* Deals by Source */}
         <div className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600/50">
-          <h3 className="text-lg font-semibold text-white mb-4">Lost Deals Analysis</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">Deals by Source</h3>
           <div className="space-y-4">
-            {allLeads.filter(lead => lead.status === 'LOST').length === 0 ? (
-              <p className="text-slate-400 text-sm text-center py-8">No lost deals to analyze</p>
+            {leadsBySourceSummary.length === 0 ? (
+              <p className="text-slate-400 text-sm text-center py-8">No deals available to analyze</p>
             ) : (
-              allLeads.filter(lead => lead.status === 'LOST').map((lead) => {
-                const value = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue || '0');
-                const convertedValue = lead.currency === "USD" ? value * 83 : value;
-                
-                return (
-                  <div key={lead.id} className="flex items-center justify-between">
-                    <span className="text-sm text-slate-300 truncate flex-1">{lead.source || 'Unknown'}</span>
-                    <div className="text-right ml-4">
-                      <div className="text-sm font-semibold text-white">1 deal</div>
-                      <div className="text-xs text-slate-400">{formatCurrency(convertedValue)}</div>
+              leadsBySourceSummary.map((summary) => (
+                <div
+                  key={summary.source}
+                  className="flex items-center justify-between gap-4"
+                >
+                  <span className="text-sm text-slate-300 truncate flex-1">{summary.source}</span>
+                  <div className="text-right ml-4">
+                    <div className="text-sm font-semibold text-white">
+                      {summary.count} {summary.count === 1 ? "deal" : "deals"}
                     </div>
-                    <div className="text-xs text-slate-500 w-12 text-right">
-                      100%
-                    </div>
+                    <div className="text-xs text-slate-400">{formatCurrency(summary.revenue)}</div>
                   </div>
-                );
-              })
+                </div>
+              ))
             )}
           </div>
+        </div>
       </div>
-    </div>
 
       {/* Active Opportunities */}
       <div className="mt-8">
