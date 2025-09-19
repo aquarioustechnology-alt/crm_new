@@ -301,7 +301,7 @@ export default function TargetManagementPage() {
         </div>
         <Button
           onClick={() => setIsModalOpen(true)}
-          className="bg-purple-600 hover:bg-purple-700 rounded-lg px-4 py-2 text-sm font-semibold shadow-lg hover:shadow-purple-500/25 transition-all duration-200"
+          className="bg-purple-600 hover:bg-purple-700 rounded-full px-5 py-2 text-sm font-semibold shadow-lg hover:shadow-purple-500/25 transition-all duration-200"
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Target

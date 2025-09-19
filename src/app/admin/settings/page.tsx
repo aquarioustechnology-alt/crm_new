@@ -182,7 +182,7 @@ export default function SettingsPage() {
           <Button 
             variant="outline" 
             onClick={handleReset}
-            className="border-slate-600 text-slate-300 hover:bg-slate-700"
+            className="border-slate-600/70 text-slate-300 hover:bg-slate-700 hover:border-slate-500 rounded-full px-5"
           >
             <RotateCcw className="w-4 h-4 mr-2" />
             Reset to Defaults
@@ -190,7 +190,7 @@ export default function SettingsPage() {
           <Button 
             onClick={handleSave} 
             disabled={saving}
-            className="bg-purple-600 hover:bg-purple-700"
+            className="bg-purple-600 hover:bg-purple-700 rounded-full px-5 shadow-lg hover:shadow-purple-500/25 disabled:opacity-60"
           >
             <Save className="w-4 h-4 mr-2" />
             {saving ? "Saving..." : "Save Settings"}
@@ -199,14 +199,14 @@ export default function SettingsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl p-1 border border-slate-600/50">
+      <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-full p-1 border border-slate-600/50">
         <nav className="flex gap-1">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`
-                flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium
+                flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-200 text-sm font-medium
                 ${
                   activeTab === tab.id
                     ? "bg-purple-600 text-white shadow-lg shadow-purple-500/25"

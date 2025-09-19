@@ -54,7 +54,7 @@ export default function AdminLayout({
           </div>
 
           {/* Admin Navigation */}
-          <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-xl p-1 border border-slate-600/50">
+          <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-full p-1 border border-slate-600/50">
             <nav className="flex gap-1">
               {adminNavItems.map((item) => {
                 const isActive = pathname === item.href;
@@ -63,7 +63,7 @@ export default function AdminLayout({
                     key={item.href}
                     href={item.href}
                     className={`
-                      flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium
+                      flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-200 text-sm font-medium
                       ${
                         isActive
                           ? "bg-purple-600 text-white shadow-lg shadow-purple-500/25"

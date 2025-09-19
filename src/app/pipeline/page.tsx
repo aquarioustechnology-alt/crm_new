@@ -2,7 +2,7 @@
 
 import AppShell from "@/components/app-shell";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Download,
@@ -121,18 +121,7 @@ export default function PipelinePage() {
   const isAdmin = session?.user?.role === "ADMIN";
 
   const [allLeads, setAllLeads] = useState<Lead[]>([]);
-  const [pipelineMetrics, setPipelineMetrics] = useState<PipelineMetrics>({
-    totalPipelineValue: 0,
-    expectedRevenue: 0,
-    dealsInPipeline: 0,
-    wonDeals: 0,
-    lostDeals: 0,
-    conversionRate: 0,
-    avgDealSize: 0,
-    avgSalesCycle: 0,
-    forecastVsTarget: 0,
-    target: 0 // Will be loaded from API
-  });
+  const [targetAmount, setTargetAmount] = useState(0);
   const [timeRange, setTimeRange] = useState<'month' | 'quarter' | 'year'>('month');
   const [isLoading, setIsLoading] = useState(true);
   const [commentDialogOpen, setCommentDialogOpen] = useState(false);
@@ -140,7 +129,236 @@ export default function PipelinePage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingLeadId, setEditingLeadId] = useState<string>("");
 
+  const fetchIdRef = useRef(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   const canCurrentUserManageLead = (lead: Lead) => canManageLead(lead, currentUserId, isAdmin);
+
+  // Load leads data
+  async function loadLeads() {
+    const fetchId = ++fetchIdRef.current;
+
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    try {
+      setIsLoading(true);
+
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1;
+      const currentQuarter = Math.ceil(currentMonth / 3);
+
+      const targetParams = new URLSearchParams();
+      if (timeRange === 'month') {
+        targetParams.set('period', 'MONTHLY');
+        targetParams.set('year', currentYear.toString());
+        targetParams.set('month', currentMonth.toString());
+      } else if (timeRange === 'quarter') {
+        targetParams.set('period', 'QUARTERLY');
+        targetParams.set('year', currentYear.toString());
+        targetParams.set('quarter', currentQuarter.toString());
+      } else {
+        targetParams.set('period', 'YEARLY');
+        targetParams.set('year', currentYear.toString());
+      }
+
+      const leadsRequest = fetch("/api/leads", { cache: "no-store", signal: controller.signal });
+      const targetRequest = fetch(`/api/targets/progress?${targetParams.toString()}`, {
+        cache: "no-store",
+        signal: controller.signal
+      }).catch((targetError) => {
+        if (targetError?.name !== 'AbortError') {
+          console.warn("Could not load target data:", targetError);
+        }
+        return null;
+      });
+
+      const [leadsRes, targetRes] = await Promise.all([leadsRequest, targetRequest]);
+
+      if (controller.signal.aborted || fetchId !== fetchIdRef.current) {
+        return;
+      }
+
+      if (!leadsRes.ok) {
+        throw new Error(`Failed to load leads (HTTP ${leadsRes.status})`);
+      }
+
+      const leadsData: Lead[] = await leadsRes.json();
+      if (controller.signal.aborted || fetchId !== fetchIdRef.current) {
+        return;
+      }
+
+      setAllLeads(Array.isArray(leadsData) ? leadsData : []);
+
+      let nextTargetAmount = 0;
+      if (targetRes && targetRes.ok) {
+        const targetJson = await targetRes.json();
+        nextTargetAmount = targetJson.summary?.totalTargetAmount || 0;
+      }
+
+      if (controller.signal.aborted || fetchId !== fetchIdRef.current) {
+        return;
+      }
+
+      setTargetAmount(nextTargetAmount);
+    } catch (error: any) {
+      if (error?.name === 'AbortError') {
+        return;
+      }
+      console.error("Error loading pipeline data:", error);
+    } finally {
+      if (!controller.signal.aborted && fetchId === fetchIdRef.current) {
+        setIsLoading(false);
+      }
+    }
+  }
+
+  const {
+    totalLeadsCount,
+    stageSummaries,
+    maxStageCount,
+    activeOpportunities,
+    totalActiveLeadCount,
+    leadsBySourceSummary,
+    pipelineMetrics,
+    pipelineAgingBuckets
+  } = useMemo(() => {
+    const totalLeadsCountLocal = allLeads.length;
+
+    const stageSummariesLocal = PIPELINE_STAGES.map((stage) => {
+      const leadsInStage = allLeads.filter((lead) => lead.status === stage.toUpperCase());
+      const totalValue = leadsInStage.reduce((sum, lead) => {
+        const rawValue = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue || '0');
+        if (isNaN(rawValue) || rawValue === 0) return sum;
+        const convertedValue = lead.currency === 'USD' ? rawValue * USD_TO_INR_RATE : rawValue;
+        return sum + convertedValue;
+      }, 0);
+
+      return {
+        stage,
+        count: leadsInStage.length,
+        value: totalValue
+      };
+    });
+
+    const maxStageCountLocal = stageSummariesLocal.reduce((max, summary) => Math.max(max, summary.count), 0);
+
+    const activeLeadList = allLeads.filter((lead) => lead.isActive !== false);
+    const activeOpportunitiesLocal = activeLeadList.slice(0, 6);
+    const totalActiveLeadCountLocal = activeLeadList.length;
+
+    const leadsBySourceMap = allLeads.reduce((acc, lead) => {
+      const sourceKey = lead.source?.trim() || 'Unknown';
+      const rawValue =
+        typeof lead.projectValue === 'number'
+          ? lead.projectValue
+          : lead.projectValue
+          ? parseFloat(lead.projectValue)
+          : 0;
+      const numericValue = Number.isFinite(rawValue) ? rawValue : 0;
+      const revenueInInr = lead.currency === 'USD' ? numericValue * USD_TO_INR_RATE : numericValue;
+
+      if (!acc[sourceKey]) {
+        acc[sourceKey] = { source: sourceKey, count: 0, revenue: 0 };
+      }
+
+      acc[sourceKey].count += 1;
+      acc[sourceKey].revenue += revenueInInr;
+
+      return acc;
+    }, {} as Record<string, { source: string; count: number; revenue: number }>);
+
+    const leadsBySourceSummaryLocal = Object.values(leadsBySourceMap).sort((a, b) => {
+      if (b.revenue === a.revenue) {
+        return b.count - a.count;
+      }
+      return b.revenue - a.revenue;
+    });
+
+    const pipelineActiveLeads = allLeads.filter((lead) => !['WON', 'LOST'].includes(lead.status));
+    const wonLeads = allLeads.filter((lead) => lead.status === 'WON');
+    const lostLeads = allLeads.filter((lead) => lead.status === 'LOST');
+
+    const totalPipelineValue = pipelineActiveLeads.reduce((sum, lead) => {
+      const value = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue || '0');
+      if (isNaN(value) || value === 0) return sum;
+      const convertedValue = lead.currency === 'USD' ? value * USD_TO_INR_RATE : value;
+      return sum + convertedValue;
+    }, 0);
+
+    const expectedRevenue = totalPipelineValue * 0.3;
+    const avgDealSize = pipelineActiveLeads.length > 0 ? totalPipelineValue / pipelineActiveLeads.length : 0;
+    const totalDeals = wonLeads.length + lostLeads.length;
+    const conversionRate = totalDeals > 0 ? (wonLeads.length / totalDeals) * 100 : 0;
+
+    const metrics: PipelineMetrics = {
+      totalPipelineValue,
+      expectedRevenue,
+      dealsInPipeline: pipelineActiveLeads.length,
+      wonDeals: wonLeads.length,
+      lostDeals: lostLeads.length,
+      conversionRate,
+      avgDealSize,
+      avgSalesCycle: 30,
+      forecastVsTarget: expectedRevenue,
+      target: targetAmount
+    };
+
+    const nowTs = Date.now();
+    const dayMs = 1000 * 60 * 60 * 24;
+    const bucketDefinitions = [
+      { id: '0-30', label: '0-30 days', min: 0, max: 30, color: 'bg-green-500' },
+      { id: '31-60', label: '31-60 days', min: 31, max: 60, color: 'bg-yellow-500' },
+      { id: '61-90', label: '61-90 days', min: 61, max: 90, color: 'bg-orange-500' },
+      { id: '90+', label: '90+ days', min: 91, max: Number.POSITIVE_INFINITY, color: 'bg-red-500' }
+    ];
+
+    const bucketStats = bucketDefinitions.map((bucket) => ({
+      ...bucket,
+      deals: 0,
+      value: 0
+    }));
+
+    pipelineActiveLeads.forEach((lead) => {
+      const createdTs = Date.parse(lead.createdAt);
+      const ageDays = Number.isFinite(createdTs) ? Math.max(0, Math.floor((nowTs - createdTs) / dayMs)) : 0;
+      const bucketIndex = bucketStats.findIndex((bucket) => ageDays >= bucket.min && ageDays <= bucket.max);
+      const bucket = bucketIndex >= 0 ? bucketStats[bucketIndex] : bucketStats[bucketStats.length - 1];
+
+      bucket.deals += 1;
+
+      const rawValue = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue || '0');
+      if (Number.isFinite(rawValue) && rawValue !== 0) {
+        const converted = lead.currency === 'USD' ? rawValue * USD_TO_INR_RATE : rawValue;
+        bucket.value += converted;
+      }
+    });
+
+    const pipelineAgingBuckets = bucketStats.map((bucket) => ({
+      id: bucket.id,
+      label: bucket.label,
+      color: bucket.color,
+      deals: bucket.deals,
+      value: bucket.value,
+      percentage:
+        pipelineActiveLeads.length > 0
+          ? Math.round((bucket.deals / pipelineActiveLeads.length) * 100)
+          : 0
+    }));
+
+    return {
+      totalLeadsCount: totalLeadsCountLocal,
+      stageSummaries: stageSummariesLocal,
+      maxStageCount: maxStageCountLocal,
+      activeOpportunities: activeOpportunitiesLocal,
+      totalActiveLeadCount: totalActiveLeadCountLocal,
+      leadsBySourceSummary: leadsBySourceSummaryLocal,
+      pipelineMetrics: metrics,
+      pipelineAgingBuckets
+    };
+  }, [allLeads, targetAmount]);
 
   const hasTarget = Boolean(pipelineMetrics.target);
   const targetProgressRatio = hasTarget ? pipelineMetrics.expectedRevenue / pipelineMetrics.target : 0;
@@ -151,98 +369,11 @@ export default function PipelinePage() {
   const isApproachingTarget = hasTarget && pipelineMetrics.expectedRevenue >= pipelineMetrics.target * 0.8;
   const isOnTrackForTarget = hasTarget && pipelineMetrics.expectedRevenue >= pipelineMetrics.target * 0.9;
 
-  // Load leads data
-  async function loadLeads() {
-    try {
-      setIsLoading(true);
-      
-      // Load leads
-      const res = await fetch("/api/leads", { cache: "no-store" });
-      const data: Lead[] = await res.json();
-      setAllLeads(data);
-      
-      // Load target based on selected time range
-      const currentYear = new Date().getFullYear();
-      const currentMonth = new Date().getMonth() + 1;
-      const currentQuarter = Math.ceil(currentMonth / 3);
-      
-      let targetAmount = 0;
-      try {
-        let targetParams = new URLSearchParams();
-        
-        if (timeRange === 'month') {
-          targetParams.set('period', 'MONTHLY');
-          targetParams.set('year', currentYear.toString());
-          targetParams.set('month', currentMonth.toString());
-        } else if (timeRange === 'quarter') {
-          targetParams.set('period', 'QUARTERLY');
-          targetParams.set('year', currentYear.toString());
-          targetParams.set('quarter', currentQuarter.toString());
-        } else {
-          targetParams.set('period', 'YEARLY');
-          targetParams.set('year', currentYear.toString());
-        }
-        
-        const targetRes = await fetch(`/api/targets/progress?${targetParams.toString()}`);
-        if (targetRes.ok) {
-          const targetData = await targetRes.json();
-          // Sum all target amounts (company + user targets)
-          targetAmount = targetData.summary?.totalTargetAmount || 0;
-        }
-      } catch (targetError) {
-        console.warn("Could not load target data:", targetError);
-      }
-      
-      calculatePipelineMetrics(data, targetAmount);
-    } catch (error) {
-      console.error("Error loading pipeline data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  // Calculate pipeline metrics
-  const calculatePipelineMetrics = (leads: Lead[], targetAmount: number = 0) => {
-    // Filter active pipeline leads (excluding WON and LOST)
-    const activeLeads = leads.filter(lead => !['WON', 'LOST'].includes(lead.status));
-    const wonLeads = leads.filter(lead => lead.status === 'WON');
-    const lostLeads = leads.filter(lead => lead.status === 'LOST');
-    
-    // Calculate total pipeline value with USD to INR conversion
-    const totalPipelineValue = activeLeads.reduce((sum, lead) => {
-      const value = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue || '0');
-      if (isNaN(value) || value === 0) return sum;
-      
-      const convertedValue = lead.currency === "USD" ? value * USD_TO_INR_RATE : value;
-      return sum + convertedValue;
-    }, 0);
-
-    // Calculate expected revenue (simplified)
-    const expectedRevenue = totalPipelineValue * 0.3; // 30% probability
-    
-    // Calculate average deal size
-    const avgDealSize = activeLeads.length > 0 ? totalPipelineValue / activeLeads.length : 0;
-    
-    // Calculate conversion rate
-    const totalDeals = wonLeads.length + lostLeads.length;
-    const conversionRate = totalDeals > 0 ? (wonLeads.length / totalDeals) * 100 : 0;
-    
-    setPipelineMetrics({
-      totalPipelineValue,
-      expectedRevenue,
-      dealsInPipeline: activeLeads.length,
-      wonDeals: wonLeads.length,
-      lostDeals: lostLeads.length,
-      conversionRate,
-      avgDealSize,
-      avgSalesCycle: 30, // Default
-      forecastVsTarget: expectedRevenue,
-      target: targetAmount
-    });
-  };
-
   useEffect(() => {
     loadLeads();
+    return () => {
+      abortControllerRef.current?.abort();
+    };
   }, [timeRange]); // Reload when time range changes
 
   // Handle edit lead
@@ -267,64 +398,6 @@ export default function PipelinePage() {
     setSelectedLead(lead);
     setCommentDialogOpen(true);
   };
-
-  const totalLeadsCount = allLeads.length;
-
-  const stageSummaries = PIPELINE_STAGES.map((stage) => {
-    const leadsInStage = allLeads.filter(lead => lead.status === stage.toUpperCase());
-    const totalValue = leadsInStage.reduce((sum, lead) => {
-      const rawValue = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue || '0');
-      if (isNaN(rawValue) || rawValue === 0) return sum;
-      const convertedValue = lead.currency === "USD" ? rawValue * USD_TO_INR_RATE : rawValue;
-      return sum + convertedValue;
-    }, 0);
-
-    return {
-      stage,
-      count: leadsInStage.length,
-      value: totalValue
-    };
-  });
-
-  const maxStageCount = stageSummaries.reduce((max, summary) => Math.max(max, summary.count), 0);
-
-  const activeOpportunities = allLeads
-    .filter((lead) => lead.isActive !== false)
-    .slice(0, 6);
-
-  const totalActiveLeadCount = allLeads.filter((lead) => lead.isActive !== false).length;
-
-  const leadsBySourceSummary = Object.values(
-    allLeads.reduce(
-      (acc, lead) => {
-        const sourceKey = lead.source?.trim() || "Unknown";
-        const rawValue =
-          typeof lead.projectValue === "number"
-            ? lead.projectValue
-            : lead.projectValue
-            ? parseFloat(lead.projectValue)
-            : 0;
-        const numericValue = Number.isFinite(rawValue) ? rawValue : 0;
-        const revenueInInr = lead.currency === "USD" ? numericValue * USD_TO_INR_RATE : numericValue;
-
-        if (!acc[sourceKey]) {
-          acc[sourceKey] = { source: sourceKey, count: 0, revenue: 0 };
-        }
-
-        acc[sourceKey].count += 1;
-        acc[sourceKey].revenue += revenueInInr;
-
-        return acc;
-      },
-      {} as Record<string, { source: string; count: number; revenue: number }>
-    )
-  ).sort((a, b) => {
-    if (b.revenue === a.revenue) {
-      return b.count - a.count;
-    }
-
-    return b.revenue - a.revenue;
-  });
 
   if (isLoading) {
     return (
@@ -351,14 +424,14 @@ export default function PipelinePage() {
             <p className="text-slate-400 text-sm">Strategic pipeline analysis and forecasting</p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-slate-800 rounded-lg p-1">
+            <div className="flex items-center gap-2 bg-slate-800 rounded-full p-1">
               {(['month', 'quarter', 'year'] as const).map((range) => (
                 <Button
                   key={range}
                   variant={timeRange === range ? "default" : "ghost"}
                   size="sm"
                   onClick={() => setTimeRange(range)}
-                  className={`rounded-lg ${
+                  className={`rounded-full ${
                     timeRange === range
                       ? "bg-purple-600 text-white"
                       : "text-slate-400 hover:text-white"
@@ -370,7 +443,7 @@ export default function PipelinePage() {
             </div>
             <Button
               variant="outline"
-              className="rounded-lg border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
+              className="rounded-full border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
             >
               <Download className="w-4 h-4 mr-2" />
               Export Report
@@ -621,36 +694,21 @@ export default function PipelinePage() {
         <div className="bg-gradient-to-br from-slate-800 to-slate-700 rounded-xl p-6 border border-slate-600/50">
           <h3 className="text-lg font-semibold text-white mb-4">Pipeline Aging</h3>
           <div className="space-y-4">
-            {[
-              { name: '0-30', color: 'bg-green-500' },
-              { name: '31-60', color: 'bg-yellow-500' },
-              { name: '61-90', color: 'bg-orange-500' },
-              { name: '90+', color: 'bg-red-500' }
-            ].map((bucket) => {
-              const bucketLeads = allLeads.filter(lead => !['WON', 'LOST'].includes(lead.status));
-              const bucketValue = bucketLeads.reduce((sum, lead) => {
-                const value = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue || '0');
-                if (isNaN(value) || value === 0) return sum;
-                const convertedValue = lead.currency === "USD" ? value * 83 : value;
-                return sum + convertedValue;
-              }, 0);
-              
-              return (
-                <div key={bucket.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${bucket.color}`} />
-                    <span className="text-sm text-slate-300">{bucket.name} days</span>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-semibold text-white">{bucketLeads.length} deals</div>
-                    <div className="text-xs text-slate-400">{formatCurrency(bucketValue)}</div>
-                  </div>
-                  <div className="text-xs text-slate-500 w-12 text-right">
-                    {bucketLeads.length > 0 ? Math.round((bucketLeads.length / allLeads.filter(l => !['WON', 'LOST'].includes(l.status)).length) * 100) : 0}%
-                  </div>
+            {pipelineAgingBuckets.map((bucket) => (
+              <div key={bucket.id} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-3 h-3 rounded-full ${bucket.color}`} />
+                  <span className="text-sm text-slate-300">{bucket.label}</span>
                 </div>
-              );
-            })}
+                <div className="text-right">
+                  <div className="text-sm font-semibold text-white">{bucket.deals} deals</div>
+                  <div className="text-xs text-slate-400">{formatCurrency(bucket.value)}</div>
+                </div>
+                <div className="text-xs text-slate-500 w-12 text-right">
+                  {bucket.percentage}%
+                </div>
+              </div>
+            ))}
           </div>
         </div>
         

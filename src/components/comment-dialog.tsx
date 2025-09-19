@@ -57,6 +57,7 @@ export function CommentDialog({ isOpen, onClose, leadId, leadName }: CommentDial
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'comments' | 'files'>('comments');
+  const [formMessage, setFormMessage] = useState<{ type: 'info' | 'success' | 'error'; text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
 
@@ -64,6 +65,7 @@ export function CommentDialog({ isOpen, onClose, leadId, leadName }: CommentDial
   useEffect(() => {
     if (isOpen) {
       loadComments();
+      setFormMessage(null);
     }
   }, [isOpen, leadId]);
 
@@ -74,9 +76,15 @@ export function CommentDialog({ isOpen, onClose, leadId, leadName }: CommentDial
       if (response.ok) {
         const data = await response.json();
         setComments(data);
+        if (!data?.length) {
+          setFormMessage({ type: 'info', text: 'Start the conversation by leaving the first note for this lead.' });
+        } else {
+          setFormMessage((current) => (current?.type === 'success' ? current : null));
+        }
       }
     } catch (error) {
       console.error("Error loading comments:", error);
+      setFormMessage({ type: 'error', text: 'We had trouble fetching comments. Please try again in a moment.' });
     } finally {
       setIsLoading(false);
     }
@@ -104,7 +112,7 @@ export function CommentDialog({ isOpen, onClose, leadId, leadName }: CommentDial
     // Client-side size validation (50MB)
     const maxSize = 50 * 1024 * 1024; // 50MB
     if (file.size > maxSize) {
-      setUploadError(`File "${file.name}" is too large. Maximum 50MB allowed.`);
+      setUploadError(`"${file.name}" is a bit heavy. Please upload files up to 50MB.`);
       return;
     }
 
@@ -165,7 +173,7 @@ export function CommentDialog({ isOpen, onClose, leadId, leadName }: CommentDial
       }
     } catch (error: any) {
       console.error('Error uploading file:', error);
-      setUploadError(error?.message || 'Failed to upload file. Please try again.');
+      setUploadError(error?.message || 'Upload failed this time. Please try again.');
       if (editorRef.current) {
         editorRef.current.innerHTML = prevContent || '';
       }
@@ -210,7 +218,7 @@ export function CommentDialog({ isOpen, onClose, leadId, leadName }: CommentDial
 
   const handleSubmit = async () => {
     if (!content.trim()) {
-      alert("Please enter a comment");
+      setFormMessage({ type: 'error', text: 'Please add a quick note before submitting.' });
       return;
     }
 
@@ -233,14 +241,15 @@ export function CommentDialog({ isOpen, onClose, leadId, leadName }: CommentDial
           editorRef.current.innerHTML = "";
         }
         setAttachments([]);
+        setFormMessage({ type: 'success', text: 'Comment added successfully. We refreshed the timeline for you.' });
         await loadComments(); // Refresh comments
       } else {
         const error = await response.json();
-        alert(error.error || "Failed to add comment");
+        setFormMessage({ type: 'error', text: error.error || 'Unable to add your comment. Please try again.' });
       }
     } catch (error) {
       console.error("Error adding comment:", error);
-      alert("Failed to add comment");
+      setFormMessage({ type: 'error', text: 'Something went wrong while saving. Please try again.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -407,20 +416,20 @@ export function CommentDialog({ isOpen, onClose, leadId, leadName }: CommentDial
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] min-h-[600px] overflow-hidden flex flex-col bg-slate-900 border-slate-700 shadow-2xl backdrop-blur-sm" onInteractOutside={(e) => e.preventDefault()}>
-        <DialogHeader className="border-b border-slate-700 pb-4 flex-shrink-0 rounded-t-xl">
-          <DialogTitle className="flex items-center gap-2 text-white text-xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] min-h-[600px] overflow-hidden flex flex-col bg-slate-900/95 border border-slate-700/70 rounded-2xl shadow-2xl backdrop-blur supports-[backdrop-filter]:bg-slate-900/80" onInteractOutside={(e) => e.preventDefault()}>
+        <DialogHeader className="border-b border-slate-700/80 pb-4 flex-shrink-0">
+          <DialogTitle className="flex items-center gap-2 text-white text-xl font-semibold">
             <MessageSquare className="w-5 h-5" />
-            Comments - {leadName}
+            Notes for {leadName}
           </DialogTitle>
         </DialogHeader>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-slate-700 flex-shrink-0 rounded-t-xl">
+        <div className="flex border-b border-slate-700/80 flex-shrink-0">
           <button
             onClick={() => setActiveTab('comments')}
             className={cn(
-              "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors",
+              "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors rounded-t-lg",
               activeTab === 'comments'
                 ? "text-white border-b-2 border-purple-500 bg-slate-800"
                 : "text-slate-400 hover:text-slate-300 hover:bg-slate-800/50"
@@ -437,7 +446,7 @@ export function CommentDialog({ isOpen, onClose, leadId, leadName }: CommentDial
           <button
             onClick={() => setActiveTab('files')}
             className={cn(
-              "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors",
+              "flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors rounded-t-lg",
               activeTab === 'files'
                 ? "text-white border-b-2 border-purple-500 bg-slate-800"
                 : "text-slate-400 hover:text-slate-300 hover:bg-slate-800/50"
@@ -457,13 +466,26 @@ export function CommentDialog({ isOpen, onClose, leadId, leadName }: CommentDial
           {activeTab === 'comments' ? (
             <>
               {/* Add Comment Section - Fixed at top */}
-              <div className="border border-slate-600 rounded-lg p-4 bg-slate-800 flex-shrink-0">
+              <div className="border border-slate-600/70 rounded-2xl p-4 bg-slate-800 flex-shrink-0">
                 <Label className="text-sm font-medium text-slate-300 mb-2 block">
                   Add New Comment
                 </Label>
-                
+
+                {formMessage && (
+                  <div
+                    className={cn(
+                      "mb-3 rounded-xl px-3 py-2 text-sm border",
+                      formMessage.type === 'success' && 'border-green-500/30 bg-green-500/10 text-green-300',
+                      formMessage.type === 'error' && 'border-red-500/30 bg-red-500/10 text-red-300',
+                      formMessage.type === 'info' && 'border-slate-600/40 bg-slate-700/40 text-slate-200'
+                    )}
+                  >
+                    {formMessage.text}
+                  </div>
+                )}
+
                 {/* Rich Text Toolbar */}
-                <div className="flex items-center gap-1 mb-3 p-2 bg-slate-700 rounded-md">
+                <div className="flex items-center gap-1 mb-3 p-2 bg-slate-700/80 rounded-lg">
                   <Button
                     type="button"
                     variant="ghost"
@@ -538,7 +560,7 @@ export function CommentDialog({ isOpen, onClose, leadId, leadName }: CommentDial
                       editorRef.current.innerHTML = '';
                     }
                   }}
-                  className="min-h-[120px] resize-none bg-slate-700 border border-slate-600 text-white focus:border-purple-500 focus:ring-purple-500/20 p-3 rounded-md outline-none"
+                  className="min-h-[120px] resize-none bg-slate-700/70 border border-slate-600/60 text-white focus:border-purple-500 focus:ring-purple-500/20 p-3 rounded-xl outline-none"
                   style={{
                     minHeight: '120px',
                     maxHeight: '300px',
@@ -562,13 +584,13 @@ export function CommentDialog({ isOpen, onClose, leadId, leadName }: CommentDial
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploading}
-                    className="text-slate-400 border-slate-600 hover:bg-slate-600 hover:text-white hover:border-slate-500 disabled:opacity-60"
+                    className="text-slate-300 border-slate-600/70 hover:bg-slate-600 hover:text-white hover:border-slate-500 disabled:opacity-60 rounded-xl"
                   >
                     <Paperclip className="w-4 h-4 mr-2" />
                     {isUploading ? 'Uploading…' : 'Attach Files'}
                   </Button>
                   {uploadError && (
-                    <div className="mt-2 text-xs text-red-400">
+                    <div className="mt-2 text-xs text-red-300 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">
                       {uploadError}
                     </div>
                   )}
@@ -580,7 +602,7 @@ export function CommentDialog({ isOpen, onClose, leadId, leadName }: CommentDial
                     {attachments.map((attachment, index) => (
                       <div
                         key={index}
-                        className="flex items-center gap-2 p-2 bg-slate-700 rounded-md"
+                        className="flex items-center gap-2 p-2 bg-slate-700/80 rounded-xl"
                       >
                         {getFileIcon(attachment.fileType)}
                         <span className="text-sm text-slate-300 flex-1 truncate">
@@ -608,7 +630,7 @@ export function CommentDialog({ isOpen, onClose, leadId, leadName }: CommentDial
                   <Button
                     onClick={handleSubmit}
                     disabled={isSubmitting || isUploading || !content.trim()}
-                    className="bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-purple-500/25 disabled:opacity-60"
+                    className="bg-purple-600 hover:bg-purple-700 text-white shadow-lg hover:shadow-purple-500/25 disabled:opacity-60 rounded-xl"
                   >
                     {isSubmitting ? (
                       "Adding..."
@@ -635,26 +657,28 @@ export function CommentDialog({ isOpen, onClose, leadId, leadName }: CommentDial
                   )}
                 </div>
                 
-                <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800" style={{ minHeight: '150px' }}>
+                <div className="flex-1 overflow-y-auto space-y-4 pr-1 scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800" style={{ minHeight: '150px' }}>
                   {isLoading ? (
                     <div className="text-center text-slate-400 py-8">
                       Loading comments...
                     </div>
                   ) : comments.length === 0 ? (
-                    <div className="text-center text-slate-400 py-8">
-                      No comments yet. Be the first to add a comment!
+                    <div className="text-center text-slate-400 py-12 border border-dashed border-slate-600/70 rounded-2xl">
+                      <MessageSquare className="w-10 h-10 mx-auto mb-3 text-slate-500" />
+                      <p className="font-medium text-slate-200">No notes yet</p>
+                      <p className="text-sm text-slate-500 mt-1">Share the latest context or next steps for this lead.</p>
                     </div>
                   ) : (
                     <>
                       {comments.length > 3 && (
-                        <div className="text-center text-xs text-slate-500 bg-slate-700/50 py-2 rounded-md border border-slate-600">
+                        <div className="text-center text-xs text-slate-500 bg-slate-700/50 py-2 rounded-xl border border-slate-600/70">
                           💡 Scroll down to see older comments
                         </div>
                       )}
                       {comments.map((comment) => (
                         <div
                           key={comment.id}
-                          className="border border-slate-600 rounded-lg p-4 bg-slate-800"
+                          className="border border-slate-600/70 rounded-2xl p-4 bg-slate-800/80"
                         >
                           {/* Comment Header */}
                           <div className="flex items-center gap-2 mb-3">
@@ -684,7 +708,7 @@ export function CommentDialog({ isOpen, onClose, leadId, leadName }: CommentDial
                               {comment.attachments.map((attachment) => (
                                 <div
                                   key={attachment.id}
-                                  className="flex items-center gap-2 p-2 bg-slate-700 rounded-md"
+                                  className="flex items-center gap-2 p-2 bg-slate-700/80 rounded-xl"
                                 >
                                   {getFileIcon(attachment.fileType)}
                                   <span className="text-sm text-slate-300 flex-1 truncate">
@@ -697,7 +721,7 @@ export function CommentDialog({ isOpen, onClose, leadId, leadName }: CommentDial
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => openSignedDownload(attachment.fileUrl)}
-                                    className="h-6 w-6 p-0 text-slate-400 hover:text-blue-400 hover:bg-slate-600"
+                                    className="h-6 w-6 p-0 text-slate-400 hover:text-blue-400 hover:bg-slate-600 rounded-full"
                                     title="Download"
                                   >
                                     <Download className="w-3 h-3" />
@@ -746,7 +770,7 @@ export function CommentDialog({ isOpen, onClose, leadId, leadName }: CommentDial
                   allFiles.map((file) => (
                     <div
                       key={file.id}
-                      className="border border-slate-600 rounded-lg p-4 bg-slate-800 hover:bg-slate-750 transition-colors"
+                      className="border border-slate-600/70 rounded-2xl p-4 bg-slate-800/80 hover:bg-slate-750 transition-colors"
                     >
                       <div className="flex items-center gap-3">
                         <div className="flex-shrink-0">
@@ -775,7 +799,7 @@ export function CommentDialog({ isOpen, onClose, leadId, leadName }: CommentDial
                             variant="ghost"
                             size="sm"
                             onClick={() => openSignedDownload(file.fileUrl)}
-                            className="text-slate-400 hover:text-blue-400 hover:bg-slate-700"
+                            className="text-slate-400 hover:text-blue-400 hover:bg-slate-700 rounded-full"
                             title="Download file"
                           >
                             <Download className="w-4 h-4" />

@@ -276,7 +276,7 @@ export default function UserManagementPage() {
         </div>
         <Button
           onClick={() => setIsModalOpen(true)}
-          className="bg-purple-600 hover:bg-purple-700 text-white"
+          className="bg-purple-600 hover:bg-purple-700 text-white rounded-full px-5 shadow-lg hover:shadow-purple-500/25"
         >
           <Plus className="w-4 h-4 mr-2" />
           Add User
