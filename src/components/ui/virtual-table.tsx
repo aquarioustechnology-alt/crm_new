@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useCallback, useState, useEffect } from "react";
-import { FixedSizeList as List } from "react-window";
+import { List } from "react-window";
 import { TableLoader } from "./loading-spinner";
 
 interface VirtualTableProps<T> {
@@ -15,6 +15,21 @@ interface VirtualTableProps<T> {
   onScroll?: (scrollTop: number) => void;
 }
 
+type VirtualRowProps<T> = {
+  data: T[];
+  renderRow: (item: T, index: number) => React.ReactNode;
+};
+
+type VirtualRowComponentProps<T> = VirtualRowProps<T> & {
+  ariaAttributes: {
+    "aria-posinset": number;
+    "aria-setsize": number;
+    role: "listitem";
+  };
+  index: number;
+  style: React.CSSProperties;
+};
+
 export function VirtualTable<T>({
   data,
   itemHeight,
@@ -25,23 +40,30 @@ export function VirtualTable<T>({
   className = "",
   onScroll,
 }: VirtualTableProps<T>) {
-  const [scrollTop, setScrollTop] = useState(0);
-
-  const handleScroll = useCallback(({ scrollTop }: { scrollTop: number }) => {
-    setScrollTop(scrollTop);
+  const handleScroll = useCallback((event: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop } = event.currentTarget;
     onScroll?.(scrollTop);
   }, [onScroll]);
 
-  const Row = useCallback(({ index, style }: { index: number; style: React.CSSProperties }) => {
-    const item = data[index];
+  const rowProps = useMemo<VirtualRowProps<T>>(() => ({
+    data,
+    renderRow,
+  }), [data, renderRow]);
+
+  const RowComponent = useCallback(({
+    ariaAttributes,
+    data: rowData,
+    index,
+    renderRow: rowRenderer,
+    style,
+  }: VirtualRowComponentProps<T>) => {
+    const item = rowData[index];
     return (
-      <div style={style} key={index}>
-        {renderRow(item, index)}
+      <div style={style} {...ariaAttributes}>
+        {item !== undefined ? rowRenderer(item, index) : null}
       </div>
     );
-  }, [data, renderRow]);
-
-  const memoizedData = useMemo(() => data, [data]);
+  }, []);
 
   if (loading) {
     return (
@@ -51,10 +73,10 @@ export function VirtualTable<T>({
     );
   }
 
-  if (memoizedData.length === 0) {
+  if (data.length === 0) {
     return (
-      <div 
-        style={{ height }} 
+      <div
+        style={{ height }}
         className={`flex items-center justify-center text-gray-500 ${className}`}
       >
         {emptyMessage}
@@ -65,14 +87,14 @@ export function VirtualTable<T>({
   return (
     <div className={className}>
       <List
-        height={height}
-        itemCount={memoizedData.length}
-        itemSize={itemHeight}
+        defaultHeight={height}
         onScroll={handleScroll}
-        itemData={memoizedData}
-      >
-        {Row}
-      </List>
+        rowComponent={RowComponent}
+        rowCount={data.length}
+        rowHeight={itemHeight}
+        rowProps={rowProps}
+        style={{ height }}
+      />
     </div>
   );
 }
