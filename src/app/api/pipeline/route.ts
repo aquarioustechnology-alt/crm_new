@@ -131,7 +131,7 @@ export async function GET(req: Request) {
 
     // Calculate pipeline value (active leads only)
     pipelineMetrics.totalPipelineValue = activeLeads.reduce((sum, lead) => {
-      const value = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue || '0');
+      const value = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue?.toString() || '0');
       if (isNaN(value) || value === 0) return sum;
       const convertedValue = lead.currency === 'USD' ? value * 83 : value;
       return sum + convertedValue;
@@ -152,7 +152,7 @@ export async function GET(req: Request) {
     const stageSummaries = PIPELINE_STAGES.map((stage) => {
       const leadsInStage = leads.filter((lead) => lead.status === stage);
       const totalValue = leadsInStage.reduce((sum, lead) => {
-        const rawValue = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue || '0');
+        const rawValue = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue?.toString() || '0');
         if (isNaN(rawValue) || rawValue === 0) return sum;
         const convertedValue = lead.currency === 'USD' ? rawValue * 83 : rawValue;
         return sum + convertedValue;
@@ -168,7 +168,7 @@ export async function GET(req: Request) {
     // Calculate leads by source
     const leadsBySourceMap = leads.reduce((acc, lead) => {
       const sourceKey = lead.source?.trim() || 'Unknown';
-      const rawValue = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue || '0');
+      const rawValue = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue?.toString() || '0');
       const numericValue = Number.isFinite(rawValue) ? rawValue : 0;
       const revenueInInr = lead.currency === 'USD' ? numericValue * 83 : numericValue;
 
@@ -213,7 +213,7 @@ export async function GET(req: Request) {
 
       bucket.deals += 1;
 
-      const rawValue = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue || '0');
+      const rawValue = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue?.toString() || '0');
       if (Number.isFinite(rawValue) && rawValue !== 0) {
         const converted = lead.currency === 'USD' ? rawValue * 83 : rawValue;
         bucket.value += converted;
