@@ -20,6 +20,7 @@ import {
 import Link from "next/link";
 import AppShell from "@/components/app-shell";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { CreateLeadModal } from "@/components/create-lead-modal";
 
 type TargetProgress = {
   target: {
@@ -81,6 +82,9 @@ export default function DashboardPage() {
   const [users, setUsers] = useState<Array<{ id: string; firstName: string; lastName: string }>>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+
+  // Create lead modal state
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const isAdmin = session?.user?.role === "ADMIN";
 
@@ -234,12 +238,13 @@ export default function DashboardPage() {
               </div>
             )}
             
-            <Link href="/leads/new">
-              <Button className="bg-purple-600 hover:bg-purple-700 rounded-full">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Lead
-              </Button>
-            </Link>
+            <Button 
+              onClick={() => setIsCreateModalOpen(true)}
+              className="bg-purple-600 hover:bg-purple-700 rounded-full"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Lead
+            </Button>
           </div>
         </div>
 
@@ -484,6 +489,16 @@ export default function DashboardPage() {
           </>
         )}
       </div>
+
+      {/* Create Lead Modal */}
+      <CreateLeadModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onLeadCreated={() => {
+          // Refresh dashboard data when a new lead is created
+          loadDashboardData();
+        }}
+      />
     </AppShell>
   );
 }
