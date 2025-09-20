@@ -430,7 +430,7 @@ export async function GET(req: Request) {
       summary,
       meta: {
         isAdmin,
-        userId: targetUserId,
+        userId: requestingUserId,
         filters: {
           year: yearFilter,
           period: periodFilter,
