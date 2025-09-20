@@ -164,16 +164,13 @@ function filterTargetsByAccess(targets: any[], isAdmin: boolean, userId: string 
       // Show only company targets
       return targets.filter(t => t.targetType === "COMPANY");
     } else if (userId && userId !== "ALL") {
-      // Show specific user + company targets
+      // Show specific user + company targets for that user
       return targets.filter(t => t.targetType === "COMPANY" || t.userId === userId);
     }
-    // Show all targets
+    // Show all targets (ALL users + company)
     return targets;
   } else {
     // Regular users see their own + company targets
-    if (!userId) {
-      return targets.filter(t => t.targetType === "COMPANY");
-    }
     return targets.filter(t => t.targetType === "COMPANY" || t.userId === userId);
   }
 }
@@ -191,8 +188,18 @@ export async function GET(req: Request) {
 
   try {
     const isAdmin = session.user.role === "ADMIN";
-    const targetUserId = isAdmin && userId ? userId : session.user.id;
+    // For filtering: if admin selects a specific user, filter by that user
+    // Otherwise, show all users (for admins) or just the current user (for regular users)
     const requestingUserId = isAdmin ? userId : session.user.id;
+    
+    console.log('Achievements API - Filters:', {
+      userId,
+      yearFilter,
+      periodFilter,
+      isAdmin,
+      requestingUserId,
+      sessionUserId: session.user.id
+    });
     
 
 
@@ -201,7 +208,9 @@ export async function GET(req: Request) {
       where: {
         period: "MONTHLY", // Only get monthly targets
         targetType: "USER", // Only user targets (company calculated)
-        ...(yearFilter && { year: parseInt(yearFilter) })
+        ...(yearFilter && { year: parseInt(yearFilter) }),
+        // Filter by user if specific user is requested (for admin filtering)
+        ...(isAdmin && userId && userId !== "ALL" && userId !== "COMPANY" && { userId: userId })
       },
       include: {
         user: {
@@ -231,6 +240,16 @@ export async function GET(req: Request) {
     
     // Filter out targets without valid users (orphaned targets)
     const validMonthlyTargets = monthlyTargets.filter(target => target.user);
+    
+    console.log('Achievements API - Monthly targets found:', {
+      totalTargets: monthlyTargets.length,
+      validTargets: validMonthlyTargets.length,
+      targetsByUser: validMonthlyTargets.reduce((acc, target) => {
+        const userId = target.userId;
+        acc[userId] = (acc[userId] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
+    });
     
     // Calculate targets for the requested period using valid targets only
     const targets = calculateTargetsForAchievements(
@@ -284,7 +303,7 @@ export async function GET(req: Request) {
           // For company targets, behavior depends on admin filtering
           if (isAdmin && userId && userId !== "ALL" && userId !== "COMPANY") {
             // If admin is viewing specific user, show company performance for that user only
-            leadWhereClause.ownerId = targetUserId;
+            leadWhereClause.ownerId = userId;
           }
           // Otherwise include all leads for company targets (no additional filtering)
         }
