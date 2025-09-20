@@ -266,9 +266,9 @@ export async function GET(req: Request) {
     // Track unique deals across all targets to avoid double counting
     const uniqueLeadIds = new Set<string>();
 
-    // Calculate achievements for each target
-    const achievements = await Promise.all(
-      targets.map(async (target) => {
+    // Calculate achievements for each target (sequentially to avoid connection pool exhaustion)
+    const achievements = [];
+    for (const target of targets) {
         // Calculate date range for this target
         let startDate: Date;
         let endDate: Date;
@@ -353,7 +353,7 @@ export async function GET(req: Request) {
           periodDisplay = `${target.year}`;
         }
 
-        return {
+        achievements.push({
           id: target.id,
           targetType: target.targetType,
           period: target.period,
@@ -385,9 +385,8 @@ export async function GET(req: Request) {
             start: startDate.toISOString(),
             end: endDate.toISOString()
           }
-        };
-      })
-    );
+        });
+    }
 
     // Calculate summary statistics
     const totalTargets = achievements.length;
