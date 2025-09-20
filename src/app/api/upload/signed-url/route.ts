@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+﻿import { NextRequest, NextResponse } from 'next/server';
+import { ensureBucketExists, getSupabaseServiceClient } from '@/lib/supabase';
 
 export const runtime = 'nodejs';
 
@@ -10,15 +10,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'fileName is required' }, { status: 400 });
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'leadfiles';
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
 
-    if (!supabaseUrl || !serviceKey) {
+    const supabase = getSupabaseServiceClient();
+    if (!supabase) {
       return NextResponse.json({ error: 'Supabase is not configured on the server' }, { status: 500 });
     }
 
-    const supabase = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
+    await ensureBucketExists(supabase, bucket, { public: true });
 
     // Build object path
     const timestamp = Date.now();
@@ -34,14 +34,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error?.message || `Failed to create signed upload URL for bucket=${bucket} path=${path}` }, { status: 500 });
     }
 
-    // Compute a public URL (works if bucket is public)
     const { data: pub } = supabase.storage.from(bucket).getPublicUrl(path);
+    const publicUrl = pub?.publicUrl || (supabaseUrl
+      ? `${supabaseUrl.replace(/\/$/, '')}/storage/v1/object/public/${bucket}/${path}`
+      : null);
 
     return NextResponse.json({
       bucket,
       path,
       token: data.token,
-      publicUrl: pub?.publicUrl || null,
+      publicUrl,
       fileType: fileType || null,
     });
   } catch (e: any) {

@@ -20,6 +20,7 @@ import {
 import { useSession } from "next-auth/react";
 import { CommentDialog } from "@/components/comment-dialog";
 import { EditLeadModal } from "@/components/edit-lead-modal";
+import { useCrmSettings } from "@/hooks/useCrmSettings";
 
 type LeadOwner = {
   id: string;
@@ -117,6 +118,7 @@ function KPICard({ title, value, subtitle, icon: Icon, color }: {
 
 export default function PipelinePage() {
   const { data: session } = useSession();
+  const { settings: crmSettings, loading: settingsLoading } = useCrmSettings();
   const currentUserId = session?.user?.id ?? null;
   const isAdmin = session?.user?.role === "ADMIN";
 
@@ -277,9 +279,18 @@ export default function PipelinePage() {
       return b.revenue - a.revenue;
     });
 
-    const pipelineActiveLeads = allLeads.filter((lead) => !['WON', 'LOST'].includes(lead.status));
-    const wonLeads = allLeads.filter((lead) => lead.status === 'WON');
-    const lostLeads = allLeads.filter((lead) => lead.status === 'LOST');
+    const pipelineActiveLeads = allLeads.filter((lead) => {
+      const finalStatuses = crmSettings.leadStatuses.filter(s => 
+        s.includes('WON') || s.includes('LOST') || s.includes('CLOSED')
+      );
+      return !finalStatuses.includes(lead.status);
+    });
+    const wonLeads = allLeads.filter((lead) => 
+      crmSettings.leadStatuses.some(status => status.includes('WON') && lead.status === status)
+    );
+    const lostLeads = allLeads.filter((lead) => 
+      crmSettings.leadStatuses.some(status => status.includes('LOST') && lead.status === status)
+    );
 
     const totalPipelineValue = pipelineActiveLeads.reduce((sum, lead) => {
       const value = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue || '0');
@@ -399,7 +410,7 @@ export default function PipelinePage() {
     setCommentDialogOpen(true);
   };
 
-  if (isLoading) {
+  if (isLoading || settingsLoading) {
     return (
       <AppShell>
         <div className="space-y-6">
@@ -722,7 +733,10 @@ export default function PipelinePage() {
               { name: 'Large', color: 'bg-green-500', maxValue: Infinity }
             ].map((size) => {
               const sizeLeads = allLeads.filter(lead => {
-                if (!['WON', 'LOST'].includes(lead.status)) return false;
+                const finalStatuses = crmSettings.leadStatuses.filter(s => 
+                  s.includes('WON') || s.includes('LOST') || s.includes('CLOSED')
+                );
+                if (!finalStatuses.includes(lead.status)) return false;
                 const value = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue || '0');
                 if (isNaN(value) || value === 0) return false;
                 const convertedValue = lead.currency === "USD" ? value * 83 : value;

@@ -18,6 +18,7 @@ import { EditLeadModal } from "@/components/edit-lead-modal";
 import { useAlertDialog } from "@/components/ui/alert-dialog";
 import { useSession } from "next-auth/react";
 import { CreateLeadModal } from "@/components/create-lead-modal";
+import { useCrmSettings } from "@/hooks/useCrmSettings";
 
 type Lead = {
   id: string;
@@ -45,8 +46,7 @@ type Lead = {
   } | null;
 };
 
-const STATUSES = ["NEW","CONTACTED","QUALIFIED","PROPOSAL","WON","LOST"] as const;
-const SOURCES  = ["WEBSITE","LINKEDIN","WHATSAPP","REFERRAL","ADS","IMPORT","OTHER"] as const;
+// Statuses and sources will now be loaded dynamically from CRM settings
 const PROJECT_TYPES = [
   "website-development",
   "mobile-app",
@@ -104,7 +104,7 @@ function EditableStatusBadge({
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-slate-700 border-slate-600">
-            {STATUSES.map(status => (
+            {crmSettings.leadStatuses.map(status => (
               <SelectItem key={status} value={status} className="text-xs">
                 {status}
               </SelectItem>
@@ -184,7 +184,7 @@ function EditableSourceBadge({
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-slate-700 border-slate-600">
-            {SOURCES.map(source => (
+            {crmSettings.leadSources.map(source => (
               <SelectItem key={source} value={source} className="text-xs">
                 {source}
               </SelectItem>
@@ -452,6 +452,7 @@ export default function LeadsPage() {
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === "ADMIN";
   const { showConfirm, showError, AlertComponent } = useAlertDialog();
+  const { settings: crmSettings, loading: settingsLoading } = useCrmSettings();
   const [allLeads, setAllLeads] = useState<Lead[]>([]);
   const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
   const [q, setQ] = useState("");
@@ -721,6 +722,18 @@ export default function LeadsPage() {
     setCurrentPage(1);
   };
 
+  // Show loading state while CRM settings are being fetched
+  if (settingsLoading) {
+    return (
+      <AppShell>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p className="text-slate-400">Loading CRM configuration...</p>
+        </div>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell>
       {/* Enhanced Header with Stats */}
@@ -825,7 +838,7 @@ export default function LeadsPage() {
               </SelectTrigger>
               <SelectContent className="bg-slate-700 border-slate-600">
                 <SelectItem value="all">All Statuses</SelectItem>
-                {STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                {crmSettings.leadStatuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -837,7 +850,7 @@ export default function LeadsPage() {
               </SelectTrigger>
               <SelectContent className="bg-slate-700 border-slate-600">
                 <SelectItem value="all">All Sources</SelectItem>
-                {SOURCES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                {crmSettings.leadSources.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -1275,7 +1288,7 @@ export default function LeadsPage() {
                 </SelectTrigger>
                 <SelectContent className="bg-slate-700 border-slate-600">
                   <SelectItem value="all">All Statuses</SelectItem>
-                  {STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  {crmSettings.leadStatuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -1289,7 +1302,7 @@ export default function LeadsPage() {
                 </SelectTrigger>
                 <SelectContent className="bg-slate-700 border-slate-600">
                   <SelectItem value="all">All Sources</SelectItem>
-                  {SOURCES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  {crmSettings.leadSources.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

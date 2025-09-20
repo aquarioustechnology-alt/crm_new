@@ -9,9 +9,7 @@ import {
   Select, SelectTrigger, SelectContent, SelectItem, SelectValue,
 } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
-
-const STATUSES = ["NEW","CONTACTED","QUALIFIED","PROPOSAL","WON","LOST"] as const;
-const SOURCES  = ["WEBSITE","LINKEDIN","WHATSAPP","REFERRAL","ADS","IMPORT","OTHER"] as const;
+import { useCrmSettings } from "@/hooks/useCrmSettings";
 
 const STEPS = [
   { id: 1, title: "Personal", description: "Contact information" },
@@ -132,6 +130,7 @@ interface CreateLeadModalProps {
 }
 
 export function CreateLeadModal({ isOpen, onClose, onLeadCreated }: CreateLeadModalProps) {
+  const { settings: crmSettings, loading: settingsLoading } = useCrmSettings();
   const [currentStep, setCurrentStep] = useState(1);
   const [msg, setMsg] = useState<string>("");
   const [errors, setErrors] = useState<ValidationErrors>({});
@@ -345,6 +344,21 @@ export function CreateLeadModal({ isOpen, onClose, onLeadCreated }: CreateLeadMo
   }
 
   if (!isOpen) return null;
+
+  // Show loading state while CRM settings are being fetched
+  if (settingsLoading) {
+    return (
+      <div className="fixed inset-0 z-[1000]">
+        <div className="absolute inset-0 z-[1000] bg-black/80" />
+        <div className="fixed z-[1100] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[960px] max-w-full max-h-[90vh] overflow-y-scroll bg-slate-800 border border-slate-600 rounded-lg p-6 shadow-xl">
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto mb-4"></div>
+            <p className="text-slate-400">Loading CRM configuration...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-[1000]">
@@ -713,7 +727,7 @@ export function CreateLeadModal({ isOpen, onClose, onLeadCreated }: CreateLeadMo
                     <SelectValue placeholder="Select source" />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-700 border-slate-600">
-                    {SOURCES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    {crmSettings.leadSources.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -724,7 +738,7 @@ export function CreateLeadModal({ isOpen, onClose, onLeadCreated }: CreateLeadMo
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-700 border-slate-600">
-                    {STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    {crmSettings.leadStatuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

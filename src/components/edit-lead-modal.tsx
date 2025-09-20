@@ -10,6 +10,7 @@ import {
   Select, SelectTrigger, SelectContent, SelectItem, SelectValue,
 } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, X, Save } from "lucide-react";
+import { useCrmSettings } from "@/hooks/useCrmSettings";
 
 // Types
 interface FormData {
@@ -65,8 +66,7 @@ const STEPS = [
   { id: 4, title: "Lead Details", description: "Categorization" },
 ];
 
-const STATUSES = ["NEW","CONTACTED","QUALIFIED","PROPOSAL","WON","LOST"] as const;
-const SOURCES = ["WEBSITE","LINKEDIN","WHATSAPP","REFERRAL","ADS","IMPORT","OTHER"] as const;
+// Statuses and sources will now be loaded dynamically from CRM settings
 const PROJECT_TYPES = [
   "website-development", "mobile-app", "software-development", "digital-marketing",
   "graphic-design", "ui-ux-design", "ecommerce", "cms-development", "api-development",
@@ -126,6 +126,7 @@ const BUDGET_RANGES = {
 };
 
 export function EditLeadModal({ isOpen, onClose, leadId, onLeadUpdated }: EditLeadModalProps) {
+  const { settings: crmSettings, loading: settingsLoading } = useCrmSettings();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     name: "", middleName: "", lastName: "", email: "", phone: "",
@@ -296,7 +297,7 @@ export function EditLeadModal({ isOpen, onClose, leadId, onLeadUpdated }: EditLe
     }
   };
 
-  if (isLoading) {
+  if (isLoading || settingsLoading) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-slate-900 border-slate-700" onInteractOutside={(e) => e.preventDefault()}>
@@ -669,7 +670,7 @@ export function EditLeadModal({ isOpen, onClose, leadId, onLeadUpdated }: EditLe
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-700 border-slate-600">
-                      {STATUSES.map(status => (
+                      {crmSettings.leadStatuses.map(status => (
                         <SelectItem key={status} value={status}>{status}</SelectItem>
                       ))}
                     </SelectContent>
@@ -683,7 +684,7 @@ export function EditLeadModal({ isOpen, onClose, leadId, onLeadUpdated }: EditLe
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-700 border-slate-600">
-                      {SOURCES.map(source => (
+                      {crmSettings.leadSources.map(source => (
                         <SelectItem key={source} value={source}>{source}</SelectItem>
                       ))}
                     </SelectContent>

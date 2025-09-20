@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
-import { createClient } from "@supabase/supabase-js";
+import { ensureBucketExists, getSupabaseServiceClient } from "@/lib/supabase";
 
 // Ensure this route uses the Node.js runtime (required for fs & Buffer)
 export const runtime = "nodejs";
@@ -52,22 +52,21 @@ export async function POST(request: NextRequest) {
     // Generate unique filename
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 15);
-    const originalName = file.name || 'upload';
-    const sanitized = originalName.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-    const fileExtension = sanitized.includes('.') ? sanitized.split('.').pop() : '';
-    const baseName = sanitized.replace(/\.[^.]+$/, '');
-    const objectName = `comments/${timestamp}-${randomString}-${baseName}${fileExtension ? '.' + fileExtension : ''}`;
+    const originalName = file.name || "upload";
+    const sanitized = originalName.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+    const fileExtension = sanitized.includes(".") ? sanitized.split(".").pop() : "";
+    const baseName = sanitized.replace(/\.[^.]+$/, "");
+    const objectName = `comments/${timestamp}-${randomString}-${baseName}${fileExtension ? "." + fileExtension : ""}`;
 
-    // If Supabase Storage is configured, upload there (production-safe)
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'leadfiles';
+    const bucket = process.env.SUPABASE_STORAGE_BUCKET || "leadfiles";
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    if (supabaseUrl && supabaseServiceKey) {
-      const supabase = createClient(supabaseUrl, supabaseServiceKey, { auth: { persistSession: false } });
+    const supabase = getSupabaseServiceClient();
+    if (supabase) {
+      await ensureBucketExists(supabase, bucket, { public: true });
 
       const { error: uploadError } = await supabase
         .storage
@@ -79,7 +78,9 @@ export async function POST(request: NextRequest) {
       }
 
       const { data: pub } = supabase.storage.from(bucket).getPublicUrl(objectName);
-      const publicUrl = pub?.publicUrl || `${supabaseUrl.replace(/\/$/, '')}/storage/v1/object/public/${bucket}/${objectName}`;
+      const publicUrl = pub?.publicUrl || (supabaseUrl
+        ? `${supabaseUrl.replace(/\/$/, "")}/storage/v1/object/public/${bucket}/${objectName}`
+        : null);
 
       const fileInfo = {
         fileName: originalName,
@@ -90,25 +91,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(fileInfo);
     }
 
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json(
+        { error: "File storage is not configured. Please contact your administrator." },
+        { status: 500 }
+      );
+    }
+
     // Fallback: write to local filesystem (useful for local dev only)
     const uploadsDir = join(process.cwd(), "public", "uploads");
     if (!existsSync(uploadsDir)) {
       await mkdir(uploadsDir, { recursive: true });
     }
-    const localPath = join(uploadsDir, objectName.replace(/^comments\//, ''));
+    const localPath = join(uploadsDir, objectName.replace(/^comments\//, ""));
     await writeFile(localPath, buffer);
 
     const fileInfo = {
       fileName: originalName,
       fileType: file.type,
       fileSize: file.size,
-      fileUrl: `/uploads/${objectName.replace(/^comments\//, '')}`,
+      fileUrl: `/uploads/${objectName.replace(/^comments\//, "")}`,
     };
     return NextResponse.json(fileInfo);
   } catch (error) {
     console.error("Error uploading file:", error);
+    const message = error instanceof Error ? error.message : "Failed to upload file";
     return NextResponse.json(
-      { error: "Failed to upload file" },
+      { error: message || "Failed to upload file" },
       { status: 500 }
     );
   }
