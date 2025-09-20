@@ -74,12 +74,14 @@ function EditableStatusBadge({
   value, 
   leadId, 
   onUpdate, 
-  isUpdating 
+  isUpdating,
+  leadStatuses 
 }: { 
   value: string; 
   leadId: string; 
   onUpdate: (leadId: string, newStatus: string) => void;
   isUpdating: boolean;
+  leadStatuses: string[];
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [tempValue, setTempValue] = useState(value);
@@ -104,7 +106,7 @@ function EditableStatusBadge({
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-slate-700 border-slate-600">
-            {crmSettings.leadStatuses.map(status => (
+            {leadStatuses.map(status => (
               <SelectItem key={status} value={status} className="text-xs">
                 {status}
               </SelectItem>
@@ -154,12 +156,14 @@ function EditableSourceBadge({
   value, 
   leadId, 
   onUpdate, 
-  isUpdating 
+  isUpdating,
+  leadSources 
 }: { 
   value: string; 
   leadId: string; 
   onUpdate: (leadId: string, newSource: string) => void;
   isUpdating: boolean;
+  leadSources: string[];
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [tempValue, setTempValue] = useState(value);
@@ -184,7 +188,7 @@ function EditableSourceBadge({
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-slate-700 border-slate-600">
-            {crmSettings.leadSources.map(source => (
+            {leadSources.map(source => (
               <SelectItem key={source} value={source} className="text-xs">
                 {source}
               </SelectItem>
@@ -1041,13 +1045,15 @@ export default function LeadsPage() {
                          value={l.status} 
                          leadId={l.id} 
                          onUpdate={handleStatusUpdate} 
-                         isUpdating={updatingLead === l.id} 
+                         isUpdating={updatingLead === l.id}
+                         leadStatuses={crmSettings.leadStatuses}
                        />
                        <EditableSourceBadge 
                          value={l.source} 
                          leadId={l.id} 
                          onUpdate={handleSourceUpdate} 
-                         isUpdating={updatingLead === l.id} 
+                         isUpdating={updatingLead === l.id}
+                         leadSources={crmSettings.leadSources}
                        />
                      </div>
                    </td>
