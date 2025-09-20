@@ -48,7 +48,7 @@ export default function AdminOverviewPage() {
                 const leadDate = new Date(lead.createdAt);
                 return leadDate.getMonth() + 1 === currentMonth && 
                        leadDate.getFullYear() === currentYear &&
-                       lead.status === "WON";
+                       lead.status === "Won";
               })
               .reduce((sum: number, lead: any) => {
                 const value = parseFloat(lead.projectValue || "0");

@@ -665,7 +665,7 @@ export default function LeadsPage() {
   
   const newLeads = (Array.isArray(filteredLeads) ? filteredLeads : []).filter(lead => lead.status === "NEW").length;
   const qualifiedLeads = (Array.isArray(filteredLeads) ? filteredLeads : []).filter(lead => lead.status === "QUALIFIED").length;
-  const wonLeads = (Array.isArray(filteredLeads) ? filteredLeads : []).filter(lead => lead.status === "WON").length;
+  const wonLeads = (Array.isArray(filteredLeads) ? filteredLeads : []).filter(lead => lead.status === "Won").length;
 
   // Apply filters
   const applyFilters = () => {

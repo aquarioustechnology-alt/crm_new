@@ -271,7 +271,7 @@ export async function GET(req: Request) {
             gte: startDate,
             lte: endDate,
           },
-          status: "WON",
+          status: "Won",
           projectValue: {
             not: null,
           },

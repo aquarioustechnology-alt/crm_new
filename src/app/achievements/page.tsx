@@ -139,13 +139,20 @@ export default function AchievementsPage() {
       if (filters.period) params.append("period", filters.period);
       if (filters.userId && filters.userId !== "ALL") params.append("userId", filters.userId);
 
+      console.log('Fetching achievements with params:', params.toString());
       const response = await fetch(`/api/achievements?${params.toString()}`);
+      
       if (response.ok) {
         const achievementsData = await response.json();
+        console.log('Achievements data received:', achievementsData);
         setData(achievementsData);
+      } else {
+        console.error('Failed to fetch achievements:', response.status, response.statusText);
+        const errorData = await response.text();
+        console.error('Error response:', errorData);
       }
-    } catch {
-      // Error handled
+    } catch (error) {
+      console.error('Error fetching achievements:', error);
     } finally {
       setLoading(false);
     }
