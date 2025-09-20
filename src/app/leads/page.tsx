@@ -732,7 +732,7 @@ export default function LeadsPage() {
            </div>
              <Button 
                onClick={() => setIsCreateModalOpen(true)}
-               className="bg-purple-600 hover:bg-purple-700 rounded-lg px-4 py-2 text-sm font-semibold shadow-lg hover:shadow-purple-500/25 transition-all duration-200">
+               className="bg-purple-600 hover:bg-purple-700 rounded-xl px-4 py-2 text-sm font-semibold shadow-lg hover:shadow-purple-500/25 transition-all duration-200">
                <Plus className="w-4 h-4 mr-2" />
                Create Lead
              </Button>
@@ -1172,7 +1172,7 @@ export default function LeadsPage() {
                        <div className="text-slate-500 text-sm">Try adjusting your search or filters</div>
                          <Button 
                            onClick={() => setIsCreateModalOpen(true)}
-                           className="bg-purple-600 hover:bg-purple-700 rounded-lg px-4 py-2 mt-3 text-sm">
+                           className="bg-purple-600 hover:bg-purple-700 rounded-xl px-4 py-2 mt-3 text-sm">
                            <Plus className="w-4 h-4 mr-2" />
                            Create Your First Lead
                          </Button>
