@@ -190,7 +190,7 @@ export async function GET(req: Request) {
     const isAdmin = session.user.role === "ADMIN";
     // For filtering: if admin selects a specific user, filter by that user
     // Otherwise, show all users (for admins) or just the current user (for regular users)
-    const requestingUserId = isAdmin ? userId : session.user.id;
+    const requestingUserId = isAdmin ? (userId || null) : session.user.id;
     
     console.log('Achievements API - Filters:', {
       userId,
@@ -292,7 +292,7 @@ export async function GET(req: Request) {
             gte: startDate,
             lte: endDate,
           },
-          status: "Won",
+          status: "WON",
           projectValue: {
             not: null,
           },
@@ -446,6 +446,14 @@ export async function GET(req: Request) {
 
   } catch (error) {
     console.error("Error fetching achievements:", error);
-    return NextResponse.json({ error: "Failed to fetch achievements" }, { status: 500 });
+    console.error("Error details:", {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      filters: { userId, yearFilter, periodFilter }
+    });
+    return NextResponse.json({ 
+      error: "Failed to fetch achievements", 
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
