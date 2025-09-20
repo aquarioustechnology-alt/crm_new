@@ -246,7 +246,9 @@ export async function GET(req: Request) {
       validTargets: validMonthlyTargets.length,
       targetsByUser: validMonthlyTargets.reduce((acc, target) => {
         const userId = target.userId;
-        acc[userId] = (acc[userId] || 0) + 1;
+        if (userId) {
+          acc[userId] = (acc[userId] || 0) + 1;
+        }
         return acc;
       }, {} as Record<string, number>)
     });
