@@ -58,7 +58,7 @@ const DEFAULT_SETTINGS: SettingsData = {
   
   // CRM Settings
   crm_lead_statuses: "New,Contacted,Qualified,Proposal,Won,Lost",
-  crm_lead_sources: "Website,Referral,Cold Call,Email,Social Media,Advertisement",
+  crm_lead_sources: "Website,Referral,Cold Call,Email,Social Media,Advertisement,Google Ads,Meta Ads",
   crm_auto_assignment: "round_robin",
   crm_inactivity_timeout: "30",
   crm_project_types: "Web Development,Mobile App,E-commerce,Consulting,Other",

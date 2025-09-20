@@ -170,7 +170,7 @@ export function CreateLeadModal({ isOpen, onClose, onLeadCreated }: CreateLeadMo
     projectValue: "",
     currency: "INR",
     timeline: "",
-    source: "OTHER",
+    source: "Other",
     status: "NEW",
     tags: "",
     notes: "",
@@ -274,7 +274,7 @@ export function CreateLeadModal({ isOpen, onClose, onLeadCreated }: CreateLeadMo
       currency: "INR",
       timeline: "",
       status: "NEW",
-      source: "OTHER",
+      source: "Other",
       tags: "",
       notes: "",
     });
@@ -318,7 +318,7 @@ export function CreateLeadModal({ isOpen, onClose, onLeadCreated }: CreateLeadMo
 
         // Lead Management
         status: formData.status || "NEW",
-        source: formData.source || "OTHER",
+        source: formData.source || "Other",
         tags: formData.tags?.split(",").map(t=>t.trim()).filter(Boolean) || [],
         notes: formData.notes || null,
       };

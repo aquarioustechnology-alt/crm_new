@@ -166,7 +166,7 @@ export default function NewLead() {
     projectValue: "",
     currency: "INR",
     timeline: "",
-    source: "OTHER",
+    source: "Other",
     status: "NEW",
     tags: "",
     notes: "",
@@ -278,7 +278,7 @@ export default function NewLead() {
       
       // Lead Management
       status: "NEW",
-      source: "OTHER",
+      source: "Other",
       tags: "",
       notes: "",
     });
@@ -346,7 +346,7 @@ export default function NewLead() {
 
         // Lead Management
         status: formData.status || "NEW",
-        source: formData.source || "OTHER",
+        source: formData.source || "Other",
         tags: formData.tags?.split(",").map((t) => t.trim()).filter(Boolean) || [],
         notes: formData.notes || null,
       };

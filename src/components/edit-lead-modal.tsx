@@ -134,7 +134,7 @@ export function EditLeadModal({ isOpen, onClose, leadId, onLeadUpdated }: EditLe
     company: "", website: "", companyDescription: "",
     projectName: "", projectDescription: "", projectType: "", budget: "",
     projectValue: "", currency: "USD", timeline: "",
-    status: "NEW", source: "OTHER", tags: [], notes: "",
+    status: "NEW", source: "Other", tags: [], notes: "",
     photo: "" // Initialize photo field
   });
   const [errors, setErrors] = useState<ValidationErrors>({});
@@ -177,7 +177,7 @@ export function EditLeadModal({ isOpen, onClose, leadId, onLeadUpdated }: EditLe
           currency: lead.currency || "USD",
           timeline: lead.timeline || "",
           status: lead.status || "NEW",
-          source: lead.source || "OTHER",
+          source: lead.source || "Other",
           tags: Array.isArray(lead.tags) ? lead.tags : (lead.tags ? [lead.tags] : []),
           notes: lead.notes || "",
           photo: lead.photo || ""

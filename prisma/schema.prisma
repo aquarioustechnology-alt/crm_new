@@ -70,7 +70,7 @@ model Lead {
 
   // Lead Management
   status    String   @default("NEW")
-  source    String   @default("OTHER")
+  source    String   @default("Other")
   tags      String[] @db.Text
   notes     String?
   isActive  Boolean  @default(true)  // Active/Deactivated status

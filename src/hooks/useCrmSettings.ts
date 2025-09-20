@@ -11,7 +11,7 @@ export interface CrmSettings {
 export function useCrmSettings() {
   const [settings, setSettings] = useState<CrmSettings>({
     leadStatuses: ['NEW', 'CONTACTED', 'QUALIFIED', 'PROPOSAL', 'WON', 'LOST'],
-    leadSources: ['WEBSITE', 'LINKEDIN', 'WHATSAPP', 'REFERRAL', 'ADS', 'IMPORT', 'OTHER'],
+    leadSources: ['Website', 'LinkedIn', 'WhatsApp', 'Referral', 'Ads', 'Import', 'Other'],
     projectTypes: [
       'website-development', 'mobile-app', 'software-development', 'digital-marketing',
       'graphic-design', 'ui-ux-design', 'ecommerce', 'cms-development', 'api-development',
@@ -42,8 +42,8 @@ export function useCrmSettings() {
           : ['NEW', 'CONTACTED', 'QUALIFIED', 'PROPOSAL', 'WON', 'LOST'];
           
         const leadSources = data.crm_lead_sources
-          ? data.crm_lead_sources.split(',').map((s: string) => s.trim().toUpperCase())
-          : ['WEBSITE', 'LINKEDIN', 'WHATSAPP', 'REFERRAL', 'ADS', 'IMPORT', 'OTHER'];
+          ? data.crm_lead_sources.split(',').map((s: string) => s.trim())
+          : ['Website', 'LinkedIn', 'WhatsApp', 'Referral', 'Ads', 'Import', 'Other'];
           
         const projectTypes = data.crm_project_types
           ? data.crm_project_types.split(',').map((s: string) => s.trim().toLowerCase().replace(/\s+/g, '-'))
