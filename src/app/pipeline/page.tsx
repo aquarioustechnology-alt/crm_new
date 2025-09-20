@@ -136,8 +136,8 @@ export default function PipelinePage() {
 
   const canCurrentUserManageLead = (lead: Lead) => canManageLead(lead, currentUserId, isAdmin);
 
-  // Load leads data
-  async function loadLeads() {
+  // Load pipeline data (optimized single API call)
+  async function loadPipelineData() {
     const fetchId = ++fetchIdRef.current;
 
     abortControllerRef.current?.abort();
@@ -147,64 +147,30 @@ export default function PipelinePage() {
     try {
       setIsLoading(true);
 
-      const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentMonth = now.getMonth() + 1;
-      const currentQuarter = Math.ceil(currentMonth / 3);
+      const pipelineParams = new URLSearchParams();
+      pipelineParams.set('timeRange', timeRange);
 
-      const targetParams = new URLSearchParams();
-      if (timeRange === 'month') {
-        targetParams.set('period', 'MONTHLY');
-        targetParams.set('year', currentYear.toString());
-        targetParams.set('month', currentMonth.toString());
-      } else if (timeRange === 'quarter') {
-        targetParams.set('period', 'QUARTERLY');
-        targetParams.set('year', currentYear.toString());
-        targetParams.set('quarter', currentQuarter.toString());
-      } else {
-        targetParams.set('period', 'YEARLY');
-        targetParams.set('year', currentYear.toString());
-      }
-
-      const leadsRequest = fetch("/api/leads", { cache: "no-store", signal: controller.signal });
-      const targetRequest = fetch(`/api/targets/progress?${targetParams.toString()}`, {
+      const response = await fetch(`/api/pipeline?${pipelineParams.toString()}`, {
         cache: "no-store",
         signal: controller.signal
-      }).catch((targetError) => {
-        if (targetError?.name !== 'AbortError') {
-          console.warn("Could not load target data:", targetError);
-        }
-        return null;
       });
 
-      const [leadsRes, targetRes] = await Promise.all([leadsRequest, targetRequest]);
-
       if (controller.signal.aborted || fetchId !== fetchIdRef.current) {
         return;
       }
 
-      if (!leadsRes.ok) {
-        throw new Error(`Failed to load leads (HTTP ${leadsRes.status})`);
+      if (!response.ok) {
+        throw new Error(`Failed to load pipeline data (HTTP ${response.status})`);
       }
 
-      const leadsData: Lead[] = await leadsRes.json();
+      const data = await response.json();
       if (controller.signal.aborted || fetchId !== fetchIdRef.current) {
         return;
       }
 
-      setAllLeads(Array.isArray(leadsData) ? leadsData : []);
+      setAllLeads(Array.isArray(data.leads) ? data.leads : []);
+      setTargetAmount(data.targetAmount || 0);
 
-      let nextTargetAmount = 0;
-      if (targetRes && targetRes.ok) {
-        const targetJson = await targetRes.json();
-        nextTargetAmount = targetJson.summary?.totalTargetAmount || 0;
-      }
-
-      if (controller.signal.aborted || fetchId !== fetchIdRef.current) {
-        return;
-      }
-
-      setTargetAmount(nextTargetAmount);
     } catch (error: any) {
       if (error?.name === 'AbortError') {
         return;
@@ -381,7 +347,7 @@ export default function PipelinePage() {
   const isOnTrackForTarget = hasTarget && pipelineMetrics.expectedRevenue >= pipelineMetrics.target * 0.9;
 
   useEffect(() => {
-    loadLeads();
+    loadPipelineData();
     return () => {
       abortControllerRef.current?.abort();
     };
@@ -398,7 +364,7 @@ export default function PipelinePage() {
 
   // Handle lead updated
   const handleLeadUpdated = () => {
-    loadLeads();
+    loadPipelineData();
   };
 
   // Handle comment
