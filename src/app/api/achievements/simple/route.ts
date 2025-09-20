@@ -71,7 +71,13 @@ export async function GET(req: Request) {
     // Simple achievement calculation for each target
     const achievements = await Promise.all(
       filteredTargets.map(async (target) => {
-        // Simple date range for September 2025 only (where our won lead is)
+        // Skip targets without month (shouldn't happen for monthly targets, but safety check)
+        if (!target.month || !target.year) {
+          console.log(`Skipping target ${target.id} - missing month or year`);
+          return null;
+        }
+
+        // Simple date range for the target month
         const startDate = new Date(target.year, target.month - 1, 1);
         const endDate = new Date(target.year, target.month, 0);
 
@@ -128,21 +134,24 @@ export async function GET(req: Request) {
       })
     );
 
-    console.log('Achievements calculated:', achievements.length);
+    // Filter out null values (targets without month/year)
+    const validAchievements = achievements.filter(achievement => achievement !== null);
+
+    console.log('Achievements calculated:', validAchievements.length);
 
     // Simple summary
     const summary = {
-      totalTargets: achievements.length,
-      achievedTargets: achievements.filter(a => a.isAchieved).length,
-      failedTargets: achievements.filter(a => !a.isAchieved).length,
-      achievementRate: achievements.length > 0 ? (achievements.filter(a => a.isAchieved).length / achievements.length) * 100 : 0,
-      totalTargetAmount: achievements.reduce((sum, a) => sum + a.targetAmount, 0),
-      totalAchievedAmount: achievements.reduce((sum, a) => sum + a.achievedAmount, 0),
-      totalDeals: achievements.reduce((sum, a) => sum + a.dealsCount, 0)
+      totalTargets: validAchievements.length,
+      achievedTargets: validAchievements.filter(a => a.isAchieved).length,
+      failedTargets: validAchievements.filter(a => !a.isAchieved).length,
+      achievementRate: validAchievements.length > 0 ? (validAchievements.filter(a => a.isAchieved).length / validAchievements.length) * 100 : 0,
+      totalTargetAmount: validAchievements.reduce((sum, a) => sum + a.targetAmount, 0),
+      totalAchievedAmount: validAchievements.reduce((sum, a) => sum + a.achievedAmount, 0),
+      totalDeals: validAchievements.reduce((sum, a) => sum + a.dealsCount, 0)
     };
 
     return NextResponse.json({
-      achievements,
+      achievements: validAchievements,
       summary,
       meta: {
         isAdmin,
