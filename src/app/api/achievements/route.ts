@@ -261,14 +261,66 @@ export async function GET(req: Request) {
       isAdmin,
       requestingUserId
     );
+
+    // Filter targets based on user selection (fix filtering issue)
+    let filteredTargets = targets;
+    if (isAdmin) {
+      if (userId === "COMPANY") {
+        // Show only company targets
+        filteredTargets = targets.filter(t => t.targetType === "COMPANY");
+      } else if (userId && userId !== "ALL") {
+        // Show only USER targets for specific user (not company targets)
+        filteredTargets = targets.filter(t => 
+          t.targetType === "USER" && t.userId === userId
+        );
+      }
+      // For "ALL", show all targets (no filtering)
+    } else {
+      // Non-admin users only see their own USER targets (not company targets)
+      filteredTargets = targets.filter(t => 
+        t.targetType === "USER" && t.userId === requestingUserId
+      );
+    }
     
 
     // Track unique deals across all targets to avoid double counting
     const uniqueLeadIds = new Set<string>();
 
-    // Calculate achievements for each target (sequentially to avoid connection pool exhaustion)
+    // Optimize performance: Get all won leads in one query, then filter in memory
+    const targetYear = yearFilter ? parseInt(yearFilter) : new Date().getFullYear();
+    const allWonLeads = await prisma.lead.findMany({
+      where: {
+        status: "WON",
+        projectValue: {
+          not: null,
+        },
+        // Get leads for the relevant date range (all targets combined)
+        createdAt: {
+          gte: new Date(targetYear, 0, 1), // Start of target year
+          lte: new Date(targetYear, 11, 31), // End of target year
+        },
+      },
+      select: {
+        id: true,
+        projectValue: true,
+        currency: true,
+        status: true,
+        createdAt: true,
+        ownerId: true,
+        owner: {
+          select: {
+            firstName: true,
+            lastName: true,
+          }
+        }
+      }
+    });
+
+    console.log(`Fetched ${allWonLeads.length} won leads for optimization`);
+
+    // Calculate achievements for each target (now using in-memory filtering)
     const achievements = [];
-    for (const target of targets) {
+    for (const target of filteredTargets) {
         // Calculate date range for this target
         let startDate: Date;
         let endDate: Date;
@@ -286,46 +338,27 @@ export async function GET(req: Request) {
           endDate = new Date(target.year, 11, 31);
         }
 
-        // Get leads for this target period
-        let leadWhereClause: any = {
-          createdAt: {
-            gte: startDate,
-            lte: endDate,
-          },
-          status: "WON",
-          projectValue: {
-            not: null,
-          },
-        };
+        // Filter leads in memory (much faster than separate DB queries)
+        let wonLeads = allWonLeads.filter(lead => {
+          const leadDate = new Date(lead.createdAt);
+          const inDateRange = leadDate >= startDate && leadDate <= endDate;
+          
+          if (!inDateRange) return false;
 
-        // Filter leads by user for USER targets
-        if (target.targetType === "USER" && target.userId) {
-          leadWhereClause.ownerId = target.userId;
-        } else if (target.targetType === "COMPANY") {
-          // For company targets, behavior depends on admin filtering
-          if (isAdmin && userId && userId !== "ALL" && userId !== "COMPANY") {
-            // If admin is viewing specific user, show company performance for that user only
-            leadWhereClause.ownerId = userId;
-          }
-          // Otherwise include all leads for company targets (no additional filtering)
-        }
-
-        const wonLeads = await prisma.lead.findMany({
-          where: leadWhereClause,
-          select: {
-            id: true,
-            projectValue: true,
-            currency: true,
-            status: true,
-            createdAt: true,
-            ownerId: true,
-            owner: {
-              select: {
-                firstName: true,
-                lastName: true,
-              }
+          // Filter by user for USER targets
+          if (target.targetType === "USER" && target.userId) {
+            return lead.ownerId === target.userId;
+          } else if (target.targetType === "COMPANY") {
+            // For company targets, behavior depends on admin filtering
+            if (isAdmin && userId && userId !== "ALL" && userId !== "COMPANY") {
+              // If admin is viewing specific user, show company performance for that user only
+              return lead.ownerId === userId;
             }
+            // Otherwise include all leads for company targets (no additional filtering)
+            return true;
           }
+          
+          return false;
         });
 
         // Calculate achieved amount (convert currencies if needed)
