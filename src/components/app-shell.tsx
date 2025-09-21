@@ -176,13 +176,11 @@ export default function AppShell({ children }: AppShellProps) {
       {typeof window !== 'undefined' && status === 'authenticated' && createPortal(
         <div 
           style={{ 
-            position: 'fixed !important', 
-            top: '16px !important', 
-            right: '16px !important', 
+            position: 'fixed', 
+            top: '16px', 
+            right: '16px', 
             zIndex: 999999,
-            pointerEvents: 'auto',
-            transform: 'none !important',
-            willChange: 'transform'
+            pointerEvents: 'auto'
           }}
           className="notification-bell-container"
         >
