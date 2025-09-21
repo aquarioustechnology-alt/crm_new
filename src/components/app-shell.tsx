@@ -32,149 +32,151 @@ export default function AppShell({ children }: AppShellProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-slate-800 border-r border-slate-700 rounded-r-xl flex flex-col">
-        {/* Logo */}
-        <div className="p-6 border-b border-slate-700 rounded-t-r-xl">
-          <Link href="/dashboard" className="text-xl font-semibold flex items-center gap-2">
-            <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">A</span>
-            </div>
-            Aquarious CRM
-          </Link>
-        </div>
-
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2">
-          {/* Main Section */}
-          <div className="mb-6">
-            <div className="space-y-1">
-              <Link href="/dashboard">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="w-full justify-start gap-3 text-slate-300 hover:text-white hover:bg-slate-700"
-                >
-                  <Home className="w-4 h-4" />
-                  Dashboard
-                </Button>
-              </Link>
-            </div>
+    <>
+      <div className="min-h-screen bg-slate-900 text-slate-100 flex">
+        {/* Sidebar */}
+        <aside className="w-64 bg-slate-800 border-r border-slate-700 rounded-r-xl flex flex-col">
+          {/* Logo */}
+          <div className="p-6 border-b border-slate-700 rounded-t-r-xl">
+            <Link href="/dashboard" className="text-xl font-semibold flex items-center gap-2">
+              <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">A</span>
+              </div>
+              Aquarious CRM
+            </Link>
           </div>
 
-          {/* Sales Section */}
-          <div className="mb-6">
-            <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-3">
-              Sales
-            </h3>
-            <div className="space-y-1">
-              <Link href="/leads">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="w-full justify-start gap-3 text-slate-300 hover:text-white hover:bg-slate-700"
-                >
-                  <Users className="w-4 h-4" />
-                  Leads
-                </Button>
-              </Link>
-              <Link href="/pipeline">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="w-full justify-start gap-3 text-slate-300 hover:text-white hover:bg-slate-700"
-                >
-                  <BarChart3 className="w-4 h-4" />
-                  Pipeline
-                </Button>
-              </Link>
-              <Link href="/achievements">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="w-full justify-start gap-3 text-slate-300 hover:text-white hover:bg-slate-700"
-                >
-                  <Trophy className="w-4 h-4" />
-                  Achievements
-                </Button>
-              </Link>
-            </div>
-          </div>
-
-
-          {/* Admin Section - Only show for admins */}
-          {session?.user?.role === "ADMIN" && (
+          {/* Navigation */}
+          <nav className="flex-1 p-4 space-y-2">
+            {/* Main Section */}
             <div className="mb-6">
-              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-3">
-                Administration
-              </h3>
               <div className="space-y-1">
-                <Link href="/admin">
+                <Link href="/dashboard">
                   <Button 
                     variant="ghost" 
                     size="sm" 
                     className="w-full justify-start gap-3 text-slate-300 hover:text-white hover:bg-slate-700"
                   >
-                    <Shield className="w-4 h-4" />
-                    Admin Panel
+                    <Home className="w-4 h-4" />
+                    Dashboard
                   </Button>
                 </Link>
               </div>
             </div>
-          )}
-        </nav>
 
-        {/* User Section */}
-        <div className="p-4 border-t border-slate-700 rounded-b-r-xl">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-sm">
-                {session?.user?.name?.charAt(0)?.toUpperCase() || "U"}
-              </span>
-            </div>
-            <div className="flex-1">
-              <div className="text-sm font-medium">{session?.user?.name || "User"}</div>
-              <div className="text-xs text-slate-400">{session?.user?.email}</div>
-              <div className="text-xs text-purple-400 font-medium">
-                {session?.user?.role === "ADMIN" ? "Administrator" : "User"}
+            {/* Sales Section */}
+            <div className="mb-6">
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-3">
+                Sales
+              </h3>
+              <div className="space-y-1">
+                <Link href="/leads">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full justify-start gap-3 text-slate-300 hover:text-white hover:bg-slate-700"
+                  >
+                    <Users className="w-4 h-4" />
+                    Leads
+                  </Button>
+                </Link>
+                <Link href="/pipeline">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full justify-start gap-3 text-slate-300 hover:text-white hover:bg-slate-700"
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    Pipeline
+                  </Button>
+                </Link>
+                <Link href="/achievements">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full justify-start gap-3 text-slate-300 hover:text-white hover:bg-slate-700"
+                  >
+                    <Trophy className="w-4 h-4" />
+                    Achievements
+                  </Button>
+                </Link>
               </div>
             </div>
+
+
+            {/* Admin Section - Only show for admins */}
+            {session?.user?.role === "ADMIN" && (
+              <div className="mb-6">
+                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-3">
+                  Administration
+                </h3>
+                <div className="space-y-1">
+                  <Link href="/admin">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full justify-start gap-3 text-slate-300 hover:text-white hover:bg-slate-700"
+                    >
+                      <Shield className="w-4 h-4" />
+                      Admin Panel
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            )}
+          </nav>
+
+          {/* User Section */}
+          <div className="p-4 border-t border-slate-700 rounded-b-r-xl">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                <span className="text-white font-bold text-sm">
+                  {session?.user?.name?.charAt(0)?.toUpperCase() || "U"}
+                </span>
+              </div>
+              <div className="flex-1">
+                <div className="text-sm font-medium">{session?.user?.name || "User"}</div>
+                <div className="text-xs text-slate-400">{session?.user?.email}</div>
+                <div className="text-xs text-purple-400 font-medium">
+                  {session?.user?.role === "ADMIN" ? "Administrator" : "User"}
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-1">
+              <Button variant="ghost" size="sm" className="flex-1 gap-2 text-slate-300 hover:text-white">
+                <Settings className="w-4 h-4" />
+                Settings
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="flex-1 gap-2 text-slate-300 hover:text-white"
+                onClick={handleSignOut}
+              >
+                <LogOut className="w-4 h-4" />
+                Sign Out
+              </Button>
+            </div>
           </div>
-          <div className="flex gap-1">
-            <Button variant="ghost" size="sm" className="flex-1 gap-2 text-slate-300 hover:text-white">
-              <Settings className="w-4 h-4" />
-              Settings
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="flex-1 gap-2 text-slate-300 hover:text-white"
-              onClick={handleSignOut}
-            >
-              <LogOut className="w-4 h-4" />
-              Sign Out
-            </Button>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 bg-slate-900 rounded-l-xl relative">
+          <div className="p-8">
+            {children}
           </div>
-        </div>
-      </aside>
+        </main>
 
-      {/* Main Content */}
-      <main className="flex-1 bg-slate-900 rounded-l-xl relative">
-        <div className="p-8">
-          {children}
-        </div>
-      </main>
-
-      {/* Global Target Achievement Notifications */}
-      <TargetAchievementNotification />
-    </div>
-
-    {/* Notification Panel - Truly Fixed Position (Outside main container) */}
-    {typeof window !== 'undefined' && status === 'authenticated' && (
-      <div className="fixed top-4 right-4 z-[9999] pointer-events-auto">
-        <LeadNotificationPanel />
+        {/* Global Target Achievement Notifications */}
+        <TargetAchievementNotification />
       </div>
-    )}
+
+      {/* Notification Panel - Truly Fixed Position (Outside main container) */}
+      {typeof window !== 'undefined' && status === 'authenticated' && (
+        <div className="fixed top-4 right-4 z-[9999] pointer-events-auto">
+          <LeadNotificationPanel />
+        </div>
+      )}
+    </>
   );
 }
