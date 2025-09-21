@@ -33,7 +33,7 @@ type Lead = {
   // company
   company?: string | null; website?: string | null;
   // misc
-  status: string; source: string; createdAt: string; statusChangedAt?: string;
+  status: string; source: string; createdAt: string; statusChangedAt: string;
   // photo
   photo?: string | null;
   // active status
@@ -1049,12 +1049,10 @@ export default function LeadsPage() {
                          isUpdating={updatingLead === l.id}
                          leadStatuses={crmSettings.leadStatuses}
                        />
-                       {l.statusChangedAt && (
-                         <AgingBadge 
-                           statusChangedAt={l.statusChangedAt}
-                           className="self-start"
-                         />
-                       )}
+                       <AgingBadge 
+                         statusChangedAt={l.statusChangedAt}
+                         className="self-start"
+                       />
                        <EditableSourceBadge 
                          value={l.source} 
                          leadId={l.id} 
