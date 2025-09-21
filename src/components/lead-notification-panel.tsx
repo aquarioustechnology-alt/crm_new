@@ -27,7 +27,7 @@ export function LeadNotificationPanel({ className = '' }: LeadNotificationPanelP
   let isLoading = false;
   let lastChecked: Date | null = null;
   let fetchNotifications = () => {};
-  let markNotificationAsRead = (leadId: string) => {};
+  let markNotificationAsRead = (leadId: string, type: string) => {};
   let clearAllNotifications = () => {};
   let hasNotifications = false;
   
