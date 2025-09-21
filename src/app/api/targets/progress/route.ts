@@ -14,6 +14,8 @@ export async function GET(req: Request) {
   }
   
   console.log('📊 API: Session found for user:', session.user.email);
+  console.log('📊 API: User role:', session.user.role);
+  console.log('📊 API: User ID:', session.user.id);
 
   const { searchParams } = new URL(req.url);
   const period = searchParams.get("period") || "MONTHLY";
@@ -21,6 +23,8 @@ export async function GET(req: Request) {
   const month = searchParams.get("month");
   const quarter = searchParams.get("quarter");
   const userId = searchParams.get("userId");
+  
+  console.log('📊 API: Request params:', { period, year, month, quarter, userId });
 
   try {
     const isAdmin = session.user.role === "ADMIN";
@@ -67,6 +71,8 @@ export async function GET(req: Request) {
       } else if (userId) {
         monthlyWhereClause.userId = targetUserId;
       }
+      
+      console.log('📊 API: Monthly where clause:', monthlyWhereClause);
       
       const monthlyTargets = await prisma.target.findMany({
         where: monthlyWhereClause,
