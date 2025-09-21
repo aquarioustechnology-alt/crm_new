@@ -121,15 +121,6 @@
     right: 16px !important;
     z-index: 999999 !important;
     transform: none !important;
-    will-change: auto !important;
-    isolation: isolate !important;
-    contain: layout style paint !important;
-  }
-
-  /* Force fixed positioning on all child elements */
-  .notification-bell-container * {
-    position: relative !important;
-    transform: none !important;
   }
 
   /* Specific targeting for the notification bell */
@@ -138,16 +129,6 @@
     top: 16px !important;
     right: 16px !important;
     z-index: 999999 !important;
-    transform: none !important;
-    will-change: auto !important;
-    isolation: isolate !important;
-    contain: layout style paint !important;
-  }
-
-  /* Ensure no parent container affects this element */
-  #notification-bell-fixed,
-  #notification-bell-fixed * {
-    position: relative !important;
     transform: none !important;
   }
 }

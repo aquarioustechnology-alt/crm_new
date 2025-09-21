@@ -181,9 +181,7 @@ export default function AppShell({ children }: AppShellProps) {
             top: '16px', 
             right: '16px', 
             zIndex: 999999,
-            pointerEvents: 'auto',
-            isolation: 'isolate',
-            contain: 'layout style paint'
+            pointerEvents: 'auto'
           }}
           className="notification-bell-container"
         >
