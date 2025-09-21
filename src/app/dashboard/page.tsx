@@ -222,10 +222,10 @@ export default function DashboardPage() {
                 {viewMode === 'USER' && (
                   <div className="min-w-[180px]">
                     <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                      <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-9">
+                      <SelectTrigger className="bg-slate-700 border-slate-600 text-white h-9 rounded-xl">
                         <SelectValue placeholder={isLoadingUsers ? "Loading users..." : "Select user"} />
                       </SelectTrigger>
-                      <SelectContent className="bg-slate-700 border-slate-600">
+                      <SelectContent className="bg-slate-700 border-slate-600 rounded-xl">
                         {users.map(u => (
                           <SelectItem key={u.id} value={u.id}>
                             {u.firstName} {u.lastName}
