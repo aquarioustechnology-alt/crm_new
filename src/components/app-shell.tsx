@@ -175,12 +175,15 @@ export default function AppShell({ children }: AppShellProps) {
       {/* Notification Panel - Portal to document body for true fixed positioning */}
       {typeof window !== 'undefined' && status === 'authenticated' && createPortal(
         <div 
+          id="notification-bell-fixed"
           style={{ 
             position: 'fixed', 
             top: '16px', 
             right: '16px', 
             zIndex: 999999,
-            pointerEvents: 'auto'
+            pointerEvents: 'auto',
+            isolation: 'isolate',
+            contain: 'layout style paint'
           }}
           className="notification-bell-container"
         >
