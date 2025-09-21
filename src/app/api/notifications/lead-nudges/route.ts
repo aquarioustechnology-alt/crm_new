@@ -29,6 +29,22 @@ export async function GET(req: Request) {
     
     console.log('🔔 Notification API: Fetching leads...');
     
+    // Get dismissed notifications for this user
+    const dismissedNotifications = await prisma.dismissedNotification.findMany({
+      where: {
+        userId: user.id
+      },
+      select: {
+        leadId: true,
+        type: true
+      }
+    });
+    
+    // Create a set of dismissed notification keys for quick lookup
+    const dismissedKeys = new Set(
+      dismissedNotifications.map(d => `${d.leadId}:${d.type}`)
+    );
+    
     const leads = await prisma.lead.findMany({
       where: {
         ...whereClause,
@@ -68,25 +84,31 @@ export async function GET(req: Request) {
 
       // First comment nudges - for leads created more than 1 day ago with no comments
       if (!hasComments && daysSinceCreated >= 1) {
-        notifications.push({
-          type: 'first_comment',
-          leadId: lead.id,
-          leadName: lead.name,
-          message: `Hey buddy, kick things off on ${lead.name} with a quick note.`,
-          actionUrl: `/leads?leadId=${lead.id}&action=comment`
-        });
+        const notificationKey = `${lead.id}:first_comment`;
+        if (!dismissedKeys.has(notificationKey)) {
+          notifications.push({
+            type: 'first_comment',
+            leadId: lead.id,
+            leadName: lead.name,
+            message: `Hey buddy, kick things off on ${lead.name} with a quick note.`,
+            actionUrl: `/leads?leadId=${lead.id}&action=comment`
+          });
+        }
       }
 
       // Stale follow-up nudges - for leads with comments but no activity in 2+ days
       if (hasComments && daysSinceLastComment >= 2) {
-        notifications.push({
-          type: 'stale_followup',
-          leadId: lead.id,
-          leadName: lead.name,
-          message: `Friendly poke 👋 — ${lead.name} hasn't moved in ${daysSinceLastComment} days. What's the plan?`,
-          actionUrl: `/leads?leadId=${lead.id}&action=comment`,
-          daysSince: daysSinceLastComment
-        });
+        const notificationKey = `${lead.id}:stale_followup`;
+        if (!dismissedKeys.has(notificationKey)) {
+          notifications.push({
+            type: 'stale_followup',
+            leadId: lead.id,
+            leadName: lead.name,
+            message: `Friendly poke 👋 — ${lead.name} hasn't moved in ${daysSinceLastComment} days. What's the plan?`,
+            actionUrl: `/leads?leadId=${lead.id}&action=comment`,
+            daysSince: daysSinceLastComment
+          });
+        }
       }
     }
 

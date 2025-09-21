@@ -48,7 +48,7 @@ export function LeadNotificationPanel({ className = '' }: LeadNotificationPanelP
 
   const handleNotificationClick = (notification: any) => {
     // Mark as read
-    markNotificationAsRead(notification.leadId);
+    markNotificationAsRead(notification.leadId, notification.type);
     
     // Navigate to the lead
     router.push(`/leads?leadId=${notification.leadId}&action=comment`);
@@ -165,9 +165,8 @@ export function LeadNotificationPanel({ className = '' }: LeadNotificationPanelP
               <div className="p-2">
                 {notifications.map((notification) => (
                   <div
-                    key={notification.leadId}
-                    className="p-3 hover:bg-slate-700/50 rounded-lg cursor-pointer transition-colors"
-                    onClick={() => handleNotificationClick(notification)}
+                    key={`${notification.leadId}-${notification.type}`}
+                    className="p-3 hover:bg-slate-700/50 rounded-lg transition-colors relative group"
                   >
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0 mt-0.5">
@@ -190,9 +189,32 @@ export function LeadNotificationPanel({ className = '' }: LeadNotificationPanelP
                         <p className="text-sm text-white font-medium mb-1">
                           {notification.leadName}
                         </p>
-                        <p className="text-xs text-slate-300 leading-relaxed">
+                        <p className="text-xs text-slate-300 leading-relaxed mb-2">
                           {notification.message}
                         </p>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 h-6"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleNotificationClick(notification);
+                            }}
+                          >
+                            View Lead
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-slate-400 hover:text-white text-xs px-3 py-1 h-6"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markNotificationAsRead(notification.leadId, notification.type);
+                            }}
+                          >
+                            Dismiss
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -3,6 +3,7 @@
 import AppShell from "@/components/app-shell";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Select, SelectTrigger, SelectContent, SelectItem, SelectValue,
@@ -455,6 +456,7 @@ const handleCommentAdded = () => {
 
 export default function LeadsPage() {
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
   const isAdmin = session?.user?.role === "ADMIN";
   const { showConfirm, showError, AlertComponent } = useAlertDialog();
   const { settings: crmSettings, loading: settingsLoading } = useCrmSettings();
@@ -522,6 +524,21 @@ export default function LeadsPage() {
     }
   }
   useEffect(() => { load();   }, [q, status, source, activeFilter]);
+
+  // Handle URL parameters for notification navigation
+  useEffect(() => {
+    const leadId = searchParams.get('leadId');
+    const action = searchParams.get('action');
+    
+    if (leadId && action === 'comment' && !isInitialLoad) {
+      // Find the lead and open comment dialog
+      const lead = allLeads.find(l => l.id === leadId);
+      if (lead) {
+        setSelectedLead(lead);
+        setCommentDialogOpen(true);
+      }
+    }
+  }, [searchParams, allLeads, isInitialLoad]);
 
   // Handle edit lead
   const handleEditLead = (leadId: string) => {

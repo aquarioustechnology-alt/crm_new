@@ -95,12 +95,43 @@ export function useLeadNotifications() {
     }
   }, [isRequestInProgress]); // Add isRequestInProgress as dependency
 
-  const markNotificationAsRead = useCallback((leadId: string) => {
-    setNotifications(prev => prev.filter(n => n.leadId !== leadId));
+  const markNotificationAsRead = useCallback(async (leadId: string, type: string) => {
+    try {
+      // Call API to dismiss the notification
+      await fetch('/api/notifications/dismiss', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          leadId,
+          type
+        })
+      });
+      
+      // Remove from local state
+      setNotifications(prev => prev.filter(n => !(n.leadId === leadId && n.type === type)));
+    } catch (error) {
+      console.error('Error dismissing notification:', error);
+      // Still remove from local state even if API call fails
+      setNotifications(prev => prev.filter(n => !(n.leadId === leadId && n.type === type)));
+    }
   }, []);
 
-  const clearAllNotifications = useCallback(() => {
-    setNotifications([]);
+  const clearAllNotifications = useCallback(async () => {
+    try {
+      // Call API to clear all dismissed notifications
+      await fetch('/api/notifications/dismiss', {
+        method: 'DELETE'
+      });
+      
+      // Clear local state
+      setNotifications([]);
+    } catch (error) {
+      console.error('Error clearing all notifications:', error);
+      // Still clear local state even if API call fails
+      setNotifications([]);
+    }
   }, []);
 
   // Auto-fetch notifications when the hook is first used

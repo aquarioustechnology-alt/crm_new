@@ -33,6 +33,7 @@ model User {
   createdBy   String?  // Admin who created this user
   admin       User?    @relation("AdminCreatedUsers", fields: [createdBy], references: [id])
   createdUsers User[]  @relation("AdminCreatedUsers")
+  dismissedNotifications DismissedNotification[] // User's dismissed notifications
   
   // Metadata
   createdAt   DateTime @default(now())
@@ -86,6 +87,9 @@ model Lead {
   // Comments relationship
   comments Comment[]
   
+  // Dismissed notifications relationship
+  dismissedNotifications DismissedNotification[]
+  
   // Performance indexes
   @@index([status])
   @@index([source])
@@ -122,6 +126,28 @@ model Comment {
   @@index([authorId])
   @@index([createdAt])
   @@index([leadId, createdAt])
+}
+
+model DismissedNotification {
+  id          String   @id @default(cuid())
+  
+  // Relationships
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  
+  // Notification type
+  type        String   // 'first_comment' or 'stale_followup'
+  
+  // Metadata
+  dismissedAt DateTime @default(now())
+  
+  // Unique constraint to prevent duplicate dismissals
+  @@unique([userId, leadId, type])
+  @@index([userId])
+  @@index([leadId])
+  @@index([dismissedAt])
 }
 
 model CommentAttachment {
