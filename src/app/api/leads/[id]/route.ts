@@ -79,54 +79,61 @@ export async function PATCH(req: Request, { params }: Ctx) {
   // Check if status is changing to reset aging counter
   const statusChanged = currentLead.status !== b.status;
   
+  // Build update data object with only provided fields
+  const updateData: any = {};
+
+  // Personal Information - only update if provided
+  if (b.name !== undefined) updateData.name = b.name;
+  if (b.middleName !== undefined) updateData.middleName = b.middleName;
+  if (b.lastName !== undefined) updateData.lastName = b.lastName;
+  if (b.email !== undefined) updateData.email = b.email;
+  if (b.phone !== undefined) updateData.phone = b.phone;
+  if (b.designation !== undefined) updateData.designation = b.designation;
+  if (b.department !== undefined) updateData.department = b.department;
+  if (b.industry !== undefined) updateData.industry = b.industry;
+  if (b.country !== undefined) updateData.country = b.country;
+  if (b.photo !== undefined) updateData.photo = b.photo;
+
+  // Company Information - only update if provided
+  if (b.company !== undefined) updateData.company = b.company;
+  if (b.website !== undefined) updateData.website = b.website;
+  if (b.companyDescription !== undefined) updateData.companyDescription = b.companyDescription;
+
+  // Project Information - only update if provided
+  if (b.projectName !== undefined) updateData.projectName = b.projectName;
+  if (b.projectDescription !== undefined) updateData.projectDescription = b.projectDescription;
+  if (b.projectType !== undefined) updateData.projectType = b.projectType;
+  if (b.budget !== undefined) updateData.budget = b.budget;
+  if (b.projectValue !== undefined) updateData.projectValue = b.projectValue;
+  if (b.currency !== undefined) updateData.currency = b.currency;
+  if (b.timeline !== undefined) updateData.timeline = b.timeline;
+
+  // Lead Management - only update if provided
+  if (b.status !== undefined) updateData.status = b.status;
+  if (b.source !== undefined) updateData.source = b.source;
+  if (b.notes !== undefined) updateData.notes = b.notes;
+  if (b.ownerId !== undefined) updateData.ownerId = b.ownerId;
+
+  // Handle tags if provided
+  if (b.tags !== undefined) {
+    updateData.tags = Array.isArray(b.tags)
+      ? b.tags
+      : b.tags
+      ? String(b.tags)
+          .split(",")
+          .map((t: string) => t.trim())
+          .filter(Boolean)
+      : [];
+  }
+
+  // Reset aging counter if status changed
+  if (statusChanged) {
+    updateData.statusChangedAt = new Date();
+  }
+
   const result = await prisma.lead.updateMany({
     where: scopedWhere(user, id),
-    data: {
-      // Personal Information
-      name: b.name,
-      middleName: b.middleName ?? null,
-      lastName: b.lastName ?? null,
-      email: b.email ?? null,
-      phone: b.phone ?? null,
-      designation: b.designation ?? null,
-      department: b.department ?? null,
-      industry: b.industry ?? null,
-      country: b.country ?? null,
-      photo: b.photo ?? null,
-
-      // Company Information
-      company: b.company ?? null,
-      website: b.website ?? null,
-      companyDescription: b.companyDescription ?? null,
-
-      // Project Information
-      projectName: b.projectName ?? null,
-      projectDescription: b.projectDescription ?? null,
-      projectType: b.projectType ?? null,
-      budget: b.budget ?? null,
-      projectValue: b.projectValue ?? null,
-      currency: b.currency ?? null,
-      timeline: b.timeline ?? null,
-
-      // Lead Management
-      status: b.status,
-      source: b.source,
-      tags: Array.isArray(b.tags)
-        ? b.tags
-        : b.tags
-        ? String(b.tags)
-            .split(",")
-            .map((t: string) => t.trim())
-            .filter(Boolean)
-        : [],
-      notes: b.notes ?? null,
-
-      // User ownership
-      ownerId: b.ownerId,
-
-      // Reset aging counter if status changed
-      ...(statusChanged && { statusChangedAt: new Date() }),
-    },
+    data: updateData,
   });
 
   if (!result.count) {
