@@ -72,7 +72,6 @@ interface PipelineMetrics {
 }
 
 const USD_TO_INR_RATE = 83;
-const PIPELINE_STAGES = ['New Leads', 'Contacted', 'Qualified', 'Proposal', 'Won', 'Lost'] as const;
 
 // Helper function to format currency with INR
 const formatCurrency = (value: number) => {
@@ -195,8 +194,8 @@ export default function PipelinePage() {
   } = useMemo(() => {
     const totalLeadsCountLocal = allLeads.length;
 
-    const stageSummariesLocal = PIPELINE_STAGES.map((stage) => {
-      const leadsInStage = allLeads.filter((lead) => lead.status === stage.toUpperCase());
+    const stageSummariesLocal = crmSettings.leadStatuses.map((status) => {
+      const leadsInStage = allLeads.filter((lead) => lead.status === status);
       const totalValue = leadsInStage.reduce((sum, lead) => {
         const rawValue = typeof lead.projectValue === 'number' ? lead.projectValue : parseFloat(lead.projectValue || '0');
         if (isNaN(rawValue) || rawValue === 0) return sum;
@@ -204,8 +203,14 @@ export default function PipelinePage() {
         return sum + convertedValue;
       }, 0);
 
+      // Convert status to display format (e.g., "NEW" -> "New Leads", "WON" -> "Won")
+      const displayStage = status
+        .split('_')
+        .map(word => word.charAt(0) + word.slice(1).toLowerCase())
+        .join(' ');
+
       return {
-        stage,
+        stage: displayStage,
         count: leadsInStage.length,
         value: totalValue
       };
