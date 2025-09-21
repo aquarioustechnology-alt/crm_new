@@ -176,12 +176,15 @@ export default function AppShell({ children }: AppShellProps) {
       {typeof window !== 'undefined' && status === 'authenticated' && createPortal(
         <div 
           style={{ 
-            position: 'fixed', 
-            top: '16px', 
-            right: '16px', 
-            zIndex: 9999,
-            pointerEvents: 'auto'
+            position: 'fixed !important', 
+            top: '16px !important', 
+            right: '16px !important', 
+            zIndex: 999999,
+            pointerEvents: 'auto',
+            transform: 'none !important',
+            willChange: 'transform'
           }}
+          className="notification-bell-container"
         >
           <LeadNotificationPanel />
         </div>,

@@ -113,4 +113,14 @@
     @apply transition-all duration-200 hover:bg-slate-700/50 hover:transform hover:scale-105
            hover:shadow-lg rounded-lg;
   }
+
+  /* Notification bell container - ensure true fixed positioning */
+  .notification-bell-container {
+    position: fixed !important;
+    top: 16px !important;
+    right: 16px !important;
+    z-index: 999999 !important;
+    transform: none !important;
+    will-change: auto !important;
+  }
 }
