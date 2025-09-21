@@ -90,9 +90,10 @@ export async function GET(req: Request) {
 
   } catch (error) {
     console.error("Error fetching lead nudges:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch notifications" },
-      { status: 500 }
-    );
+    // Return empty notifications array instead of error to prevent client crashes
+    return NextResponse.json({
+      notifications: [],
+      total: 0
+    });
   }
 }

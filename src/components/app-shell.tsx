@@ -163,7 +163,9 @@ export default function AppShell({ children }: AppShellProps) {
       <main className="flex-1 bg-slate-900 rounded-l-xl">
         {/* Notification Panel */}
         <div className="absolute top-4 right-4 z-40">
-          <LeadNotificationPanel />
+          {typeof window !== 'undefined' && status === 'authenticated' && (
+            <LeadNotificationPanel />
+          )}
         </div>
         
         <div className="p-8">

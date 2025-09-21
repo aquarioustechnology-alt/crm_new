@@ -21,7 +21,18 @@ export function useLeadNotifications() {
   const [notifications, setNotifications] = useState<LeadNotification[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
-  const { showInfo, showWarning } = useToast();
+  
+  // Safely get toast functions with error handling
+  let showInfo: (title: string, description?: string) => void = () => {};
+  let showWarning: (title: string, description?: string) => void = () => {};
+  
+  try {
+    const toast = useToast();
+    showInfo = toast?.showInfo || (() => {});
+    showWarning = toast?.showWarning || (() => {});
+  } catch (error) {
+    console.warn('Toast context not available:', error);
+  }
 
   const fetchNotifications = useCallback(async () => {
     setIsLoading(true);

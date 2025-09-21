@@ -21,15 +21,28 @@ interface LeadNotificationPanelProps {
 
 export function LeadNotificationPanel({ className = '' }: LeadNotificationPanelProps) {
   const router = useRouter();
-  const {
-    notifications,
-    isLoading,
-    lastChecked,
-    fetchNotifications,
-    markNotificationAsRead,
-    clearAllNotifications,
-    hasNotifications
-  } = useLeadNotifications();
+  
+  // Safely get notification hook with error handling
+  let notifications: any[] = [];
+  let isLoading = false;
+  let lastChecked: Date | null = null;
+  let fetchNotifications = () => {};
+  let markNotificationAsRead = () => {};
+  let clearAllNotifications = () => {};
+  let hasNotifications = false;
+  
+  try {
+    const notificationHook = useLeadNotifications();
+    notifications = notificationHook.notifications || [];
+    isLoading = notificationHook.isLoading || false;
+    lastChecked = notificationHook.lastChecked || null;
+    fetchNotifications = notificationHook.fetchNotifications || (() => {});
+    markNotificationAsRead = notificationHook.markNotificationAsRead || (() => {});
+    clearAllNotifications = notificationHook.clearAllNotifications || (() => {});
+    hasNotifications = notificationHook.hasNotifications || false;
+  } catch (error) {
+    console.warn('Lead notifications not available:', error);
+  }
 
   const [isExpanded, setIsExpanded] = useState(false);
 
