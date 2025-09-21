@@ -2,7 +2,7 @@
 
 import AppShell from "@/components/app-shell";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -454,7 +454,7 @@ const handleCommentAdded = () => {
   console.log("Comment added successfully");
 };
 
-export default function LeadsPage() {
+function LeadsPageContent() {
   const { data: session } = useSession();
   const searchParams = useSearchParams();
   const isAdmin = session?.user?.role === "ADMIN";
@@ -1450,5 +1450,19 @@ export default function LeadsPage() {
         onLeadCreated={load}
       />
     </AppShell>
+  );
+}
+
+export default function LeadsPage() {
+  return (
+    <Suspense fallback={
+      <AppShell>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full"></div>
+        </div>
+      </AppShell>
+    }>
+      <LeadsPageContent />
+    </Suspense>
   );
 }
