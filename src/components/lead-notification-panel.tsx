@@ -147,7 +147,7 @@ export function LeadNotificationPanel({ className = '' }: LeadNotificationPanelP
           </div>
 
           {/* Notifications List */}
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800">
             {isLoading ? (
               <div className="p-4 text-center text-slate-400">
                 <RefreshCw className="w-4 h-4 animate-spin mx-auto mb-2" />

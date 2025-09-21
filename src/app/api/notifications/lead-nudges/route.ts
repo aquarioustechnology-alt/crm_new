@@ -112,13 +112,13 @@ export async function GET(req: Request) {
       }
     }
 
-    // Limit to 3 notifications to avoid overwhelming the user
-    const limitedNotifications = notifications.slice(0, 3);
+    // Show all notifications (removed limit for better user experience)
+    const allNotifications = notifications;
     
-    console.log('🔔 Notification API: Generated', notifications.length, 'notifications, returning', limitedNotifications.length);
+    console.log('🔔 Notification API: Generated', notifications.length, 'notifications, returning', allNotifications.length);
 
     return NextResponse.json({
-      notifications: limitedNotifications,
+      notifications: allNotifications,
       total: notifications.length
     });
 

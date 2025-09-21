@@ -571,6 +571,22 @@ function LeadsPageContent() {
         setFilteredLeads(prev => prev.map(lead => 
           lead.id === leadId ? { ...lead, status: newStatus } : lead
         ));
+        
+        // Auto-dismiss stale_followup notifications for this lead
+        try {
+          await fetch('/api/notifications/dismiss-on-action', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              leadId: leadId,
+              actionType: 'lead_updated'
+            })
+          });
+        } catch (error) {
+          console.error('Error auto-dismissing notification:', error);
+        }
       } else {
         console.error('Failed to update status');
       }

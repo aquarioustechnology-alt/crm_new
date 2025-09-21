@@ -243,6 +243,22 @@ export function CommentDialog({ isOpen, onClose, leadId, leadName }: CommentDial
         setAttachments([]);
         setFormMessage({ type: 'success', text: 'Comment added successfully. We refreshed the timeline for you.' });
         await loadComments(); // Refresh comments
+        
+        // Auto-dismiss first_comment notifications for this lead
+        try {
+          await fetch('/api/notifications/dismiss-on-action', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              leadId: leadId,
+              actionType: 'comment_added'
+            })
+          });
+        } catch (error) {
+          console.error('Error auto-dismissing notification:', error);
+        }
       } else {
         const error = await response.json();
         setFormMessage({ type: 'error', text: error.error || 'Unable to add your comment. Please try again.' });
