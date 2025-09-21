@@ -6,14 +6,7 @@ export async function GET(req: Request) {
   try {
     console.log('🔔 Notification API: Starting request...');
     
-    // Add timeout wrapper
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Request timeout')), 8000); // 8 second timeout
-    });
-    
-    const userPromise = getCurrentUser();
-    const user = await Promise.race([userPromise, timeoutPromise]);
-    
+    const user = await getCurrentUser();
     if (!user) {
       console.log('🔔 Notification API: No user found');
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -36,8 +29,7 @@ export async function GET(req: Request) {
     
     console.log('🔔 Notification API: Fetching leads...');
     
-    // Add timeout for database query
-    const leadsPromise = prisma.lead.findMany({
+    const leads = await prisma.lead.findMany({
       where: {
         ...whereClause,
         isActive: true,
@@ -63,8 +55,6 @@ export async function GET(req: Request) {
       orderBy: { createdAt: 'desc' },
       take: 50 // Limit to 50 leads to prevent large queries
     });
-    
-    const leads = await Promise.race([leadsPromise, timeoutPromise]);
     
     console.log('🔔 Notification API: Found', leads.length, 'leads');
 
