@@ -37,9 +37,24 @@ export function useLeadNotifications() {
   const fetchNotifications = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/notifications/lead-nudges');
+      console.log('🔔 Hook: Fetching notifications...');
+      
+      // Add timeout to prevent hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const response = await fetch('/api/notifications/lead-nudges', {
+        signal: controller.signal,
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
+      
+      clearTimeout(timeoutId);
+      
       if (response.ok) {
         const data: NotificationResponse = await response.json();
+        console.log('🔔 Hook: Received', data.notifications.length, 'notifications');
         setNotifications(data.notifications);
         setLastChecked(new Date());
         
@@ -58,9 +73,14 @@ export function useLeadNotifications() {
             }
           }, index * 2000); // Stagger notifications by 2 seconds
         });
+      } else {
+        console.error('🔔 Hook: API response not ok:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Error fetching lead notifications:', error);
+      if (error.name === 'AbortError') {
+        console.error('🔔 Hook: Request timed out after 10 seconds');
+      }
     } finally {
       setIsLoading(false);
     }

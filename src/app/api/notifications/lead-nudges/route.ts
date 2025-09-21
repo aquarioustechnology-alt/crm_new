@@ -4,10 +4,14 @@ import { getCurrentUser } from "@/lib/auth-utils";
 
 export async function GET(req: Request) {
   try {
+    console.log('🔔 Notification API: Starting request...');
     const user = await getCurrentUser();
     if (!user) {
+      console.log('🔔 Notification API: No user found');
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+    
+    console.log('🔔 Notification API: User authenticated:', user.email);
 
     const now = new Date();
     const notifications: Array<{
@@ -22,6 +26,7 @@ export async function GET(req: Request) {
     // Get leads owned by the current user (or all leads for admins)
     const whereClause = user.role === 'ADMIN' ? {} : { ownerId: user.id };
     
+    console.log('🔔 Notification API: Fetching leads...');
     const leads = await prisma.lead.findMany({
       where: {
         ...whereClause,
@@ -47,6 +52,8 @@ export async function GET(req: Request) {
       },
       orderBy: { createdAt: 'desc' }
     });
+    
+    console.log('🔔 Notification API: Found', leads.length, 'leads');
 
     for (const lead of leads) {
       const hasComments = lead.comments.length > 0;
@@ -82,6 +89,8 @@ export async function GET(req: Request) {
 
     // Limit to 3 notifications to avoid overwhelming the user
     const limitedNotifications = notifications.slice(0, 3);
+    
+    console.log('🔔 Notification API: Generated', notifications.length, 'notifications, returning', limitedNotifications.length);
 
     return NextResponse.json({
       notifications: limitedNotifications,

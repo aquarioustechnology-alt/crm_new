@@ -152,6 +152,9 @@ export function LeadNotificationPanel({ className = '' }: LeadNotificationPanelP
               <div className="p-4 text-center text-slate-400">
                 <RefreshCw className="w-4 h-4 animate-spin mx-auto mb-2" />
                 Checking for notifications...
+                <p className="text-xs mt-2 text-slate-500">
+                  This may take a moment...
+                </p>
               </div>
             ) : notifications.length === 0 ? (
               <div className="p-4 text-center text-slate-400">
