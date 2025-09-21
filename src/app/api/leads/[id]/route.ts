@@ -66,6 +66,19 @@ export async function PATCH(req: Request, { params }: Ctx) {
   const { id } = await params;
   const b = await req.json();
 
+  // First, get the current lead to check if status is changing
+  const currentLead = await prisma.lead.findFirst({
+    where: scopedWhere(user, id),
+    select: { status: true }
+  });
+
+  if (!currentLead) {
+    return handleMissingLead(id);
+  }
+
+  // Check if status is changing to reset aging counter
+  const statusChanged = currentLead.status !== b.status;
+  
   const result = await prisma.lead.updateMany({
     where: scopedWhere(user, id),
     data: {
@@ -110,6 +123,9 @@ export async function PATCH(req: Request, { params }: Ctx) {
 
       // User ownership
       ownerId: b.ownerId,
+
+      // Reset aging counter if status changed
+      ...(statusChanged && { statusChangedAt: new Date() }),
     },
   });
 

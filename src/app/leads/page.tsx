@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/select";
 import { StatusBadge } from "@/components/status-badge";
 import { SourceBadge } from "@/components/source-badge";
+import { AgingBadge } from "@/components/aging-badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -32,7 +33,7 @@ type Lead = {
   // company
   company?: string | null; website?: string | null;
   // misc
-  status: string; source: string; createdAt: string;
+  status: string; source: string; createdAt: string; statusChangedAt: string;
   // photo
   photo?: string | null;
   // active status
@@ -1047,6 +1048,10 @@ export default function LeadsPage() {
                          onUpdate={handleStatusUpdate} 
                          isUpdating={updatingLead === l.id}
                          leadStatuses={crmSettings.leadStatuses}
+                       />
+                       <AgingBadge 
+                         statusChangedAt={l.statusChangedAt}
+                         className="self-start"
                        />
                        <EditableSourceBadge 
                          value={l.source} 
