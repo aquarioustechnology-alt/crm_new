@@ -972,14 +972,20 @@ export default function LeadsPage() {
               ) : currentLeads.length ? currentLeads.map((l, index) => (
                  <tr key={l.id} className="border-t border-slate-600/20 hover:bg-slate-700/10 transition-all duration-200 group">
                    <td className="px-4 py-5">
-                     <div className="font-semibold text-purple-400 text-sm tracking-wide">
-                       {(() => {
-                         // Find the lead's position in the original unsorted list (by creation time)
-                         // Since allLeads is sorted by newest first, we need to reverse the index
-                         const leadIndex = allLeads.findIndex(lead => lead.id === l.id);
-                         const leadNumber = allLeads.length - leadIndex;
-                         return `LEAD${String(leadNumber).padStart(3, "0")}`;
-                       })()}
+                     <div className="space-y-2">
+                       <div className="font-semibold text-purple-400 text-sm tracking-wide">
+                         {(() => {
+                           // Find the lead's position in the original unsorted list (by creation time)
+                           // Since allLeads is sorted by newest first, we need to reverse the index
+                           const leadIndex = allLeads.findIndex(lead => lead.id === l.id);
+                           const leadNumber = allLeads.length - leadIndex;
+                           return `LEAD${String(leadNumber).padStart(3, "0")}`;
+                         })()}
+                       </div>
+                       <AgingBadge 
+                         statusChangedAt={l.statusChangedAt}
+                         className="self-start"
+                       />
                      </div>
                    </td>
                    <td className="px-4 py-5">
@@ -1048,10 +1054,6 @@ export default function LeadsPage() {
                          onUpdate={handleStatusUpdate} 
                          isUpdating={updatingLead === l.id}
                          leadStatuses={crmSettings.leadStatuses}
-                       />
-                       <AgingBadge 
-                         statusChangedAt={l.statusChangedAt}
-                         className="self-start"
                        />
                        <EditableSourceBadge 
                          value={l.source} 
