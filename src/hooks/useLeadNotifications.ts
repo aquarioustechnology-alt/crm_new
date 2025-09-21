@@ -21,6 +21,7 @@ export function useLeadNotifications() {
   const [notifications, setNotifications] = useState<LeadNotification[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
+  const [isRequestInProgress, setIsRequestInProgress] = useState(false);
   
   // Safely get toast functions with error handling
   let showInfo: (title: string, description?: string) => void = () => {};
@@ -35,6 +36,13 @@ export function useLeadNotifications() {
   }
 
   const fetchNotifications = useCallback(async () => {
+    // Prevent multiple simultaneous requests
+    if (isRequestInProgress) {
+      console.log('🔔 Hook: Request already in progress, skipping...');
+      return;
+    }
+    
+    setIsRequestInProgress(true);
     setIsLoading(true);
     try {
       console.log('🔔 Hook: Fetching notifications...');
@@ -83,8 +91,9 @@ export function useLeadNotifications() {
       }
     } finally {
       setIsLoading(false);
+      setIsRequestInProgress(false);
     }
-  }, [showInfo, showWarning]);
+  }, [isRequestInProgress]); // Add isRequestInProgress as dependency
 
   const markNotificationAsRead = useCallback((leadId: string) => {
     setNotifications(prev => prev.filter(n => n.leadId !== leadId));
@@ -97,7 +106,7 @@ export function useLeadNotifications() {
   // Auto-fetch notifications when the hook is first used
   useEffect(() => {
     fetchNotifications();
-  }, [fetchNotifications]);
+  }, []); // Only run once on mount
 
   // Auto-refresh notifications every 5 minutes
   useEffect(() => {
@@ -106,7 +115,7 @@ export function useLeadNotifications() {
     }, 5 * 60 * 1000); // 5 minutes
 
     return () => clearInterval(interval);
-  }, [fetchNotifications]);
+  }, []); // Only set up interval once
 
   return {
     notifications,

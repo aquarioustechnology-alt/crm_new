@@ -5,7 +5,15 @@ import { getCurrentUser } from "@/lib/auth-utils";
 export async function GET(req: Request) {
   try {
     console.log('🔔 Notification API: Starting request...');
-    const user = await getCurrentUser();
+    
+    // Add timeout wrapper
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timeout')), 8000); // 8 second timeout
+    });
+    
+    const userPromise = getCurrentUser();
+    const user = await Promise.race([userPromise, timeoutPromise]);
+    
     if (!user) {
       console.log('🔔 Notification API: No user found');
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -27,7 +35,9 @@ export async function GET(req: Request) {
     const whereClause = user.role === 'ADMIN' ? {} : { ownerId: user.id };
     
     console.log('🔔 Notification API: Fetching leads...');
-    const leads = await prisma.lead.findMany({
+    
+    // Add timeout for database query
+    const leadsPromise = prisma.lead.findMany({
       where: {
         ...whereClause,
         isActive: true,
@@ -50,8 +60,11 @@ export async function GET(req: Request) {
           take: 1
         }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      take: 50 // Limit to 50 leads to prevent large queries
     });
+    
+    const leads = await Promise.race([leadsPromise, timeoutPromise]);
     
     console.log('🔔 Notification API: Found', leads.length, 'leads');
 
