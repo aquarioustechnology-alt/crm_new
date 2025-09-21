@@ -160,18 +160,18 @@ export default function AppShell({ children }: AppShellProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 bg-slate-900 rounded-l-xl">
-        {/* Notification Panel */}
-        <div className="absolute top-4 right-4 z-40">
-          {typeof window !== 'undefined' && status === 'authenticated' && (
-            <LeadNotificationPanel />
-          )}
-        </div>
-        
+      <main className="flex-1 bg-slate-900 rounded-l-xl relative">
         <div className="p-8">
           {children}
         </div>
       </main>
+
+      {/* Notification Panel - Fixed Position */}
+      {typeof window !== 'undefined' && status === 'authenticated' && (
+        <div className="fixed top-4 right-4 z-50">
+          <LeadNotificationPanel />
+        </div>
+      )}
 
       {/* Global Target Achievement Notifications */}
       <TargetAchievementNotification />

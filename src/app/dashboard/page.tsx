@@ -90,22 +90,35 @@ export default function DashboardPage() {
 
   const loadDashboardData = useCallback(async () => {
     try {
+      console.log('📊 Dashboard: Loading data for period:', selectedPeriod);
       setIsLoading(true);
       const params = new URLSearchParams({ period: selectedPeriod });
       if (isAdmin && viewMode === 'USER' && selectedUserId) {
         params.set('userId', selectedUserId);
       }
-      const response = await fetch(`/api/targets/progress?${params.toString()}`, {
+      
+      const url = `/api/targets/progress?${params.toString()}`;
+      console.log('📊 Dashboard: Fetching from:', url);
+      
+      const response = await fetch(url, {
         headers: {
-          'Cache-Control': 'max-age=60'
+          'Cache-Control': 'no-cache'
         }
       });
+      
+      console.log('📊 Dashboard: Response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('📊 Dashboard: Received data:', data);
         setDashboardData(data);
+      } else {
+        console.error('📊 Dashboard: API error:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('📊 Dashboard: Error details:', errorText);
       }
     } catch (error) {
-      console.error("Error loading dashboard data:", error);
+      console.error("📊 Dashboard: Error loading dashboard data:", error);
     } finally {
       setIsLoading(false);
     }

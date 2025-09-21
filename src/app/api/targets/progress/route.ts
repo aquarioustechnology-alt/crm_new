@@ -6,10 +6,14 @@ import { convertCurrency } from "@/lib/currency";
 import { Decimal } from "@prisma/client/runtime/library";
 
 export async function GET(req: Request) {
+  console.log('📊 API: Targets progress endpoint called');
   const session = await getServerSession(authOptions);
   if (!session?.user) {
+    console.log('📊 API: No session found');
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  
+  console.log('📊 API: Session found for user:', session.user.email);
 
   const { searchParams } = new URL(req.url);
   const period = searchParams.get("period") || "MONTHLY";
