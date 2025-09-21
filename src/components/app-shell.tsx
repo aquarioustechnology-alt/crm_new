@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Users, BarChart3, FileText, Settings, LogOut, Shield, Home, Trophy } from "lucide-react";
 import { TargetAchievementNotification } from "@/components/target-achievement-notification";
 import { LeadNotificationPanel } from "@/components/lead-notification-panel";
+import { createPortal } from "react-dom";
 
 interface AppShellProps {
   children: ReactNode;
@@ -171,11 +172,20 @@ export default function AppShell({ children }: AppShellProps) {
         <TargetAchievementNotification />
       </div>
 
-      {/* Notification Panel - Truly Fixed Position (Outside main container) */}
-      {typeof window !== 'undefined' && status === 'authenticated' && (
-        <div className="fixed top-4 right-4 z-[9999] pointer-events-auto">
+      {/* Notification Panel - Portal to document body for true fixed positioning */}
+      {typeof window !== 'undefined' && status === 'authenticated' && createPortal(
+        <div 
+          style={{ 
+            position: 'fixed', 
+            top: '16px', 
+            right: '16px', 
+            zIndex: 9999,
+            pointerEvents: 'auto'
+          }}
+        >
           <LeadNotificationPanel />
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
