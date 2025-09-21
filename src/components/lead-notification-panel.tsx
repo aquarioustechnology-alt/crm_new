@@ -195,18 +195,18 @@ export function LeadNotificationPanel({ className = '' }: LeadNotificationPanelP
                         <div className="flex gap-2">
                           <Button
                             size="sm"
-                            className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 h-6"
+                            className="bg-blue-600 hover:bg-blue-700 text-white text-xs px-3 py-1 h-6 rounded-xl"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleNotificationClick(notification);
                             }}
                           >
-                            View Lead
+                            Add Comment
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-slate-400 hover:text-white text-xs px-3 py-1 h-6"
+                            className="text-slate-400 hover:text-white text-xs px-3 py-1 h-6 rounded-xl"
                             onClick={(e) => {
                               e.stopPropagation();
                               markNotificationAsRead(notification.leadId, notification.type);
