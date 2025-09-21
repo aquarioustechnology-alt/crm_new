@@ -78,7 +78,7 @@ export function useLeadNotifications() {
       }
     } catch (error) {
       console.error('Error fetching lead notifications:', error);
-      if (error.name === 'AbortError') {
+      if (error instanceof Error && error.name === 'AbortError') {
         console.error('🔔 Hook: Request timed out after 10 seconds');
       }
     } finally {
