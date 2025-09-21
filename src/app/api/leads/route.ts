@@ -85,7 +85,6 @@ const leads = await prisma.lead.findMany({
         isActive: true,
         createdAt: true,
         updatedAt: true,
-        statusChangedAt: true,
         ownerId: true,
         ...(canViewAllLeads(user) && {
           owner: {

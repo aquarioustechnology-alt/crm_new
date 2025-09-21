@@ -124,8 +124,8 @@ export async function PATCH(req: Request, { params }: Ctx) {
       // User ownership
       ownerId: b.ownerId,
 
-      // Reset aging counter if status changed
-      ...(statusChanged && { statusChangedAt: new Date() }),
+      // Reset aging counter if status changed (will be enabled after database migration)
+      // ...(statusChanged && { statusChangedAt: new Date() }),
     },
   });
 
