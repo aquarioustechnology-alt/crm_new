@@ -6,6 +6,7 @@ import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Users, BarChart3, FileText, Settings, LogOut, Shield, Home, Trophy } from "lucide-react";
 import { TargetAchievementNotification } from "@/components/target-achievement-notification";
+import { LeadNotificationPanel } from "@/components/lead-notification-panel";
 
 interface AppShellProps {
   children: ReactNode;
@@ -160,6 +161,11 @@ export default function AppShell({ children }: AppShellProps) {
 
       {/* Main Content */}
       <main className="flex-1 bg-slate-900 rounded-l-xl">
+        {/* Notification Panel */}
+        <div className="absolute top-4 right-4 z-40">
+          <LeadNotificationPanel />
+        </div>
+        
         <div className="p-8">
           {children}
         </div>
