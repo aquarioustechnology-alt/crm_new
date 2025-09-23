@@ -88,6 +88,11 @@ function EditableStatusBadge({
   const [isEditing, setIsEditing] = useState(false);
   const [tempValue, setTempValue] = useState(value);
 
+  // Sync tempValue with value prop when it changes
+  useEffect(() => {
+    setTempValue(value);
+  }, [value]);
+
   const handleSave = () => {
     if (tempValue !== value) {
       onUpdate(leadId, tempValue);
@@ -170,6 +175,11 @@ function EditableSourceBadge({
   const [isEditing, setIsEditing] = useState(false);
   const [tempValue, setTempValue] = useState(value);
 
+  // Sync tempValue with value prop when it changes
+  useEffect(() => {
+    setTempValue(value);
+  }, [value]);
+
   const handleSave = () => {
     if (tempValue !== value) {
       onUpdate(leadId, tempValue);
@@ -251,6 +261,11 @@ function EditableOwner({
   const [tempOwnerId, setTempOwnerId] = useState(owner?.id || "");
   const [users, setUsers] = useState<Array<{ id: string; firstName: string; lastName: string; email: string }>>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+
+  // Sync tempOwnerId with owner prop when it changes
+  useEffect(() => {
+    setTempOwnerId(owner?.id || "");
+  }, [owner?.id]);
 
   // Load users when editing starts
   const loadUsers = async () => {
